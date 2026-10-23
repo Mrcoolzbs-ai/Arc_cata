@@ -1,0 +1,24 @@
+Arcane Cataclysm 0.4.1 — fresh runs
+Minecraft 1.21.1 / NeoForge 21.1.264 / Java 21
+
+=== commands ===
+AC41_COMMANDS_ALL_PASS default=true permissions=0,1,2 console=true query=true invalid=true bool=true toggle=true disabledCast=true activeCastPreserved=true saved=false
+BUILD SUCCESSFUL in 21s
+
+=== restart ===
+AC41_RESTART_PERSISTENCE_PASS
+BUILD SUCCESSFUL in 20s
+
+=== pure ===
+AC4_PATCH_PASS geometryColumns=326717 replacementStates=5676710
+AC4_SCHEDULE_CODEC_PASS players=1..240 waves=9,17,21,25,29,42 duration=45
+AC4_PURE_ALL_PASS (no live-server or multiplayer claims)
+AC4_BOOTSTRAP_EXIT_NO_WORLD
+BUILD SUCCESSFUL in 18s
+
+Previous 0.4.0-preview live/visual results are archived separately, not claimed as repeated 0.4.1 tests.
+
+=== final release ===
+clean build: BUILD SUCCESSFUL
+JAR_VALIDATED: version=0.4.1, JSON, translations; no QA classes
+JAR SHA256: cdca4328ea0427924c63f20b4570fc11b20843aea0836271b5ef172d4cbd51d7

@@ -1,0 +1,316 @@
+{
+  "charge": {
+    "subtitle": "subtitles.arcane_cataclysm.charge",
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:charge",
+        "stream": false
+      }
+    ]
+  },
+  "impact": {
+    "subtitle": "subtitles.arcane_cataclysm.impact",
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:impact",
+        "stream": false
+      }
+    ]
+  },
+  "rumble": {
+    "subtitle": "subtitles.arcane_cataclysm.rumble",
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:rumble",
+        "stream": false
+      }
+    ]
+  },
+  "heavens_lance_charge": {
+    "subtitle": "subtitles.arcane_cataclysm.heavens_lance_charge",
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:heavens_lance_charge",
+        "stream": true
+      }
+    ]
+  },
+  "heavens_lance_impact": {
+    "subtitle": "subtitles.arcane_cataclysm.heavens_lance_impact",
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:heavens_lance_impact",
+        "stream": true
+      }
+    ]
+  },
+  "thousand_blades_charge": {
+    "subtitle": "subtitles.arcane_cataclysm.thousand_blades_charge",
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:thousand_blades_charge",
+        "stream": true
+      }
+    ]
+  },
+  "thousand_blades_impact": {
+    "subtitle": "subtitles.arcane_cataclysm.thousand_blades_impact",
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:thousand_blades_impact",
+        "stream": true
+      }
+    ]
+  },
+  "snow_grave_charge": {
+    "subtitle": "subtitles.arcane_cataclysm.snow_grave_charge",
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:snow_grave_charge",
+        "stream": true
+      }
+    ]
+  },
+  "snow_grave_impact": {
+    "subtitle": "subtitles.arcane_cataclysm.snow_grave_impact",
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:snow_grave_impact",
+        "stream": true
+      }
+    ]
+  },
+  "tempest_wrath_charge": {
+    "subtitle": "subtitles.arcane_cataclysm.tempest_wrath_charge",
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:tempest_wrath_charge",
+        "stream": true
+      }
+    ]
+  },
+  "tempest_wrath_impact": {
+    "subtitle": "subtitles.arcane_cataclysm.tempest_wrath_impact",
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:tempest_wrath_impact",
+        "stream": true
+      }
+    ]
+  },
+  "starfall_charge": {
+    "subtitle": "subtitles.arcane_cataclysm.starfall_charge",
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:starfall_charge",
+        "stream": true
+      }
+    ]
+  },
+  "starfall_impact": {
+    "subtitle": "subtitles.arcane_cataclysm.starfall_impact",
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:starfall_impact",
+        "stream": true
+      }
+    ]
+  },
+  "tectonic_rift_charge": {
+    "subtitle": "subtitles.arcane_cataclysm.tectonic_rift_charge",
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:tectonic_rift_charge",
+        "stream": true
+      }
+    ]
+  },
+  "tectonic_rift_impact": {
+    "subtitle": "subtitles.arcane_cataclysm.tectonic_rift_impact",
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:tectonic_rift_impact",
+        "stream": true
+      }
+    ]
+  },
+  "inferno_tide_charge": {
+    "subtitle": "subtitles.arcane_cataclysm.inferno_tide_charge",
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:inferno_tide_charge",
+        "stream": true
+      }
+    ]
+  },
+  "inferno_tide_impact": {
+    "subtitle": "subtitles.arcane_cataclysm.inferno_tide_impact",
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:inferno_tide_impact",
+        "stream": true
+      }
+    ]
+  },
+  "singularity_charge": {
+    "subtitle": "subtitles.arcane_cataclysm.singularity_charge",
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:singularity_charge",
+        "stream": true
+      }
+    ]
+  },
+  "singularity_impact": {
+    "subtitle": "subtitles.arcane_cataclysm.singularity_impact",
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:singularity_impact",
+        "stream": true
+      }
+    ]
+  },
+  "solar_nova_charge": {
+    "subtitle": "subtitles.arcane_cataclysm.solar_nova_charge",
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:solar_nova_charge",
+        "stream": true
+      }
+    ]
+  },
+  "solar_nova_impact": {
+    "subtitle": "subtitles.arcane_cataclysm.solar_nova_impact",
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:solar_nova_impact",
+        "stream": true
+      }
+    ]
+  },
+  "last_cataclysm_charge": {
+    "subtitle": "subtitles.arcane_cataclysm.last_cataclysm_charge",
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:last_cataclysm_charge",
+        "stream": true
+      }
+    ]
+  },
+  "last_cataclysm_impact": {
+    "subtitle": "subtitles.arcane_cataclysm.last_cataclysm_impact",
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:last_cataclysm_impact",
+        "stream": true
+      }
+    ]
+  },
+  "verdant_ruin_charge": {
+    "subtitle": "subtitles.arcane_cataclysm.verdant_ruin_charge",
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:verdant_ruin_charge",
+        "stream": true
+      }
+    ]
+  },
+  "verdant_ruin_impact": {
+    "subtitle": "subtitles.arcane_cataclysm.verdant_ruin_impact",
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:verdant_ruin_impact",
+        "stream": true
+      }
+    ]
+  },
+  "obsidian_cathedral_charge": {
+    "subtitle": "subtitles.arcane_cataclysm.obsidian_cathedral_charge",
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:obsidian_cathedral_charge",
+        "stream": true
+      }
+    ]
+  },
+  "obsidian_cathedral_impact": {
+    "subtitle": "subtitles.arcane_cataclysm.obsidian_cathedral_impact",
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:obsidian_cathedral_impact",
+        "stream": true
+      }
+    ]
+  },
+  "abyssal_deluge_charge": {
+    "subtitle": "subtitles.arcane_cataclysm.abyssal_deluge_charge",
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:abyssal_deluge_charge",
+        "stream": true
+      }
+    ]
+  },
+  "abyssal_deluge_impact": {
+    "subtitle": "subtitles.arcane_cataclysm.abyssal_deluge_impact",
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:abyssal_deluge_impact",
+        "stream": true
+      }
+    ]
+  },
+  "world_sunder_charge": {
+    "subtitle": "subtitles.arcane_cataclysm.world_sunder_charge",
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:world_sunder_charge",
+        "stream": true
+      }
+    ]
+  },
+  "world_sunder_impact": {
+    "subtitle": "subtitles.arcane_cataclysm.world_sunder_impact",
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:world_sunder_impact",
+        "stream": true
+      }
+    ]
+  },
+  "rune_apocalypse_charge": {
+    "subtitle": "subtitles.arcane_cataclysm.rune_apocalypse_charge",
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:rune_apocalypse_charge",
+        "stream": true
+      }
+    ]
+  },
+  "rune_apocalypse_impact": {
+    "subtitle": "subtitles.arcane_cataclysm.rune_apocalypse_impact",
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:rune_apocalypse_impact",
+        "stream": true
+      }
+    ]
+  },
+  "end_of_all_charge": {
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:end_of_all_charge",
+        "stream": true
+      }
+    ],
+    "subtitle": "subtitles.arcane_cataclysm.end_of_all_charge"
+  },
+  "end_of_all_impact": {
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:end_of_all_impact",
+        "stream": true
+      }
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "required": true,
+  "package": "com.kostya.cataclysm.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "CameraMixin",
+    "HumanoidModelMixin",
+    "MusicMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "mixins": [
+    "RespawnMixin"
+  ]
+}

@@ -1,0 +1,25 @@
+.gradle/
+build/
+run/
+run-data/
+repo/
+*.log
+.idea/
+*.iml
+
+run-pipeline/
+
+run-v3/
+
+run-v3*/
+
+# Local QA worlds, render captures and tooling credentials
+/run*/
+/.env
+/.env.*
+*.key
+*.pem
+*.token
+*.hprof
+hs_err_pid*
+__pycache__/

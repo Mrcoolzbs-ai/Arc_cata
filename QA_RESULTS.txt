@@ -1,0 +1,57 @@
+Arcane Cataclysm 0.5.0-style-preview
+Fresh runs: Minecraft 1.21.1 / NeoForge 21.1.264 / Java21 / Mesa software OpenGL
+
+=== movie ===
+STYLE_CLIENT_READY renderer=LWJGL version 3.3.3+5
+STYLE_SCENE_PASS spell=heavens_lance frames=144
+STYLE_SCENE_PASS spell=thousand_blades frames=144
+STYLE_SCENE_PASS spell=snow_grave frames=144
+STYLE_SCENE_PASS spell=tempest_wrath frames=144
+STYLE_SCENE_PASS spell=starfall frames=144
+STYLE_ALL_PASS (staged client visuals, first five only; no destructive-server claims)
+BUILD SUCCESSFUL in 8m 30s
+
+=== network preview ===
+STYLE_CLIENT_READY renderer=LWJGL version 3.3.3+5
+STYLE_PREVIEW_PERMISSION_SCOPE_PASS
+STYLE_COMMAND_PACKET_PASS spell=heavens_lance
+STYLE_SCENE_PASS spell=heavens_lance frames=8
+STYLE_COMMAND_PACKET_PASS spell=thousand_blades
+STYLE_SCENE_PASS spell=thousand_blades frames=8
+STYLE_COMMAND_PACKET_PASS spell=snow_grave
+STYLE_SCENE_PASS spell=snow_grave frames=8
+STYLE_COMMAND_PACKET_PASS spell=tempest_wrath
+STYLE_SCENE_PASS spell=tempest_wrath frames=8
+STYLE_COMMAND_PACKET_PASS spell=starfall
+STYLE_SCENE_PASS spell=starfall frames=8
+STYLE_ALL_PASS (staged client visuals, first five only; no destructive-server claims)
+BUILD SUCCESSFUL in 1m 55s
+
+=== pure ===
+AC4_PATCH_PASS geometryColumns=326717 replacementStates=5676710
+AC4_SCHEDULE_CODEC_PASS players=1..240 waves=9,17,21,25,29,42 duration=45
+AC4_PURE_ALL_PASS (no live-server or multiplayer claims)
+AC4_BOOTSTRAP_EXIT_NO_WORLD
+BUILD SUCCESSFUL in 18s
+
+=== end toggle ===
+AC41_COMMANDS_ALL_PASS default=true permissions=0,1,2 console=true query=true invalid=true bool=true toggle=true disabledCast=true activeCastPreserved=true saved=false
+BUILD SUCCESSFUL in 23s
+
+=== restart ===
+AC41_RESTART_PERSISTENCE_PASS
+BUILD SUCCESSFUL in 20s
+
+=== ice camera fix ===
+STYLE_CLIENT_READY renderer=LWJGL version 3.3.3+5
+STYLE_SCENE_PASS spell=snow_grave frames=144
+STYLE_ALL_PASS (staged client visuals, first five only; no destructive-server claims)
+BUILD SUCCESSFUL in 2m 16s
+
+=== final build ===
+BUILD SUCCESSFUL in 8s
+
+JAR_VALIDATED: version, JSON, new shaders, camera guard, no QA classes
+VIDEO_VALIDATED: 59.916992s, 960x540; accelerated, source12fps interpolated24; not FPS benchmark
+JAR SHA256: 59c1e4dbdc051ed7abe9ecc4ee1cb1fc4545c54a9bd05b27b815842165b735b5
+VIDEO SHA256: 1ee410a7bfd326a2b646337e1ce405dc79e4ecb5ea4e258cfb5f0df06ba4fa91

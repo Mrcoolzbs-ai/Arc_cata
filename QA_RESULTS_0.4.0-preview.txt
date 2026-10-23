@@ -1,0 +1,41 @@
+
+=== pure ===
+AC4_PATCH_PASS geometryColumns=326717 replacementStates=5676710
+AC4_SCHEDULE_CODEC_PASS players=1..240 waves=9,17,21,25,29,42 duration=45
+AC4_PURE_ALL_PASS (no live-server or multiplayer claims)
+AC4_BOOTSTRAP_EXIT_NO_WORLD
+
+=== visual ===
+AC4_VISUAL_FRAME phase=0 age=40
+AC4_VISUAL_FRAME phase=1 age=112
+AC4_VISUAL_FRAME phase=2 age=178
+AC4_VISUAL_FRAME phase=3 age=340
+AC4_VISUAL_FRAME phase=4 age=560
+AC4_VISUAL_FRAME phase=5 age=686
+AC4_VISUAL_FRAME phase=6 age=704
+AC4_VISUAL_FRAME phase=7 age=760
+AC4_VISUAL_FRAME phase=8 age=840
+AC4_VISUAL_FRAME phase=9 age=892
+AC4_VISUAL_FRAME phase=10 age=906
+AC4_VISUAL_FRAME phase=11 age=936
+AC4_VISUAL_ALL_PASS (staged GUI only; no world/server claims)
+
+=== game ===
+AC4_GAME_BEGIN players=7 dimensions=overworld,nether modes=all radius=102.4
+AC4_CASTER_PROTECTION_PASS
+AC4_GAME_WAVE_PASS wave=1 age=180
+AC4_RESPAWN_BLOCK_PASS
+AC4_GAME_WAVE_PASS wave=2 age=340
+AC4_GAME_WAVE_PASS wave=3 age=420
+AC4_GAME_WAVE_PASS wave=4 age=500
+AC4_GAME_WAVE_PASS wave=5 age=580
+AC4_GAME_WAVE_PASS wave=6 age=840
+AC4_IMMEDIATE_RESPAWN_PASS
+AC4_RELEASE_UNLOCK_RESPAWN_PASS prepared=164 total=164
+AC4_GAME_SERVER_ALL_PASS blocks=131712 chunks=156 failed=0 skipped=0
+AC4_REGRESSION_PASS spell=thousand_blades blocks=332 created=0 retriesFailed=0
+AC4_REGRESSION_PASS spell=tempest_wrath blocks=572 created=0 retriesFailed=0
+AC4_REGRESSION_PASS spell=inferno_tide blocks=4742 created=0 retriesFailed=0
+AC4_REGRESSION_PASS spell=last_cataclysm blocks=13015 created=180 retriesFailed=0
+AC4_GAME_ALL_PASS
+AC4_GAME_CLIENT_PASS
