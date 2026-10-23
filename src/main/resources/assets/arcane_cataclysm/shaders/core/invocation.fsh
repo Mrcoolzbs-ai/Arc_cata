@@ -6,6 +6,7 @@ uniform sampler2D Sampler0;
 uniform vec4 ColorModulator;
 uniform vec4 FxParams; // catalogue index, age / impact, theatre mix, flash allowed
 uniform vec4 FxColor2;
+uniform vec4 FxImpact; // after ticks, bounded power, glitch envelope, shake envelope
 uniform float FxTime;
 uniform vec2 FxScreen;
 in vec2 texCoord;
@@ -150,8 +151,8 @@ void particles(int id){
  }
 }
 void aureole(vec3 center,float radius,float spin,float power){
- float den=rd.z;if(abs(den)<.001)return;float t=(center.z-ro.z)/den;
- if(t<0.||t>opaqueDepth)return;vec2 p=(ro+rd*t-center).xy/radius;
+ float den=rd.y;if(abs(den)<.001)return;float t=(center.y-ro.y)/den;
+ if(t<0.||t>opaqueDepth)return;vec2 p=(ro+rd*t-center).xz/radius;
  float r=length(p),a=atan(p.y,p.x)+spin;
  float ringWidth=.058+.018*pow(max(0.,cos(a*12.)),8.);
  if(abs(r-1.)<ringWidth){
@@ -165,7 +166,7 @@ void aureole(vec3 center,float radius,float spin,float power){
 void lance(){
  float open=ease(.10,.52,phase),release=ease(.73,.98,phase);
  vec3 spear=vec3(0,mix(7.5,-4.,release),0);float len=18.;
- aureole(vec3(0,16.,5.),10.5,tm*.025,open);
+ aureole(vec3(0,16.,0.),10.5,tm*.025,open);
  // A three-tier heavenly gate, opened in succession, with petals / wings of light.
  for(int k=0;k<3;k++){
   float i=float(k),grow=ease(.11+i*.085,.28+i*.085,phase);
@@ -205,7 +206,7 @@ void blades(){
    if(launch>0.)beam(p+vec3(0,len*1.1,0),p+vec3(0,len+launch*12.,0),.04,primary,launch*.8);
   }
  }
- seal(vec3(0,12,0),normalize(vec3(0,.2,1)),4.5,-tm*.1,.55,2.);
+ seal(vec3(0,12,0),vec3(0,1,0),4.5,-tm*.1,.55,2.);
  spark(vec3(0,12,0),.26,vec3(.6,1.6,1.9),2.);
 }
 void frost(){
@@ -285,7 +286,7 @@ void storm(){
    last=p;
   }
  }
- for(int i=0;i<3;i++)seal(vec3(0,3.+float(i)*4.,0),normalize(vec3(sin(tm*.1+float(i)),.7,cos(tm*.1+float(i)))),5.+float(i),tm*.08,.25*build,2.);
+ for(int i=0;i<3;i++)seal(vec3(0,3.+float(i)*4.,0),vec3(0,1,0),5.+float(i),tm*.08,.25*build,2.);
 }
 void starfall(){
  float summon=ease(.08,.40,phase),fall=ease(.64,1.,phase);
@@ -315,7 +316,7 @@ void starfall(){
   float k=float(i),a=k*2.399+tm*.2;vec3 side=vec3(cos(a),sin(a)*.35,sin(a))*radius*.7;
   beam(center+side,center+side+tail*(9.+float(i%3)*4.+fall*14.),.12+.025*k,mix(vec3(1.8,.28,.035),vec3(1.,.7,.15),k/10.),summon*.4);
  }
- seal(center+vec3(0,-4.5,0),normalize(tail),6.8,-tm*.10,.55,0.);
+ seal(center+vec3(0,-4.5,0),vec3(0,1,0),6.8,-tm*.10,.55,0.);
  for(int i=0;i<6;i++){
   float k=float(i),a=k*TAU/6.+tm*.20;vec3 p=center+vec3(cos(a)*7.,sin(a)*3.,sin(a)*7.);
   spark(p,.15,mix(primary,accent,.5),.8*summon);
@@ -353,7 +354,26 @@ void main(){
  vec2 uv=(texCoord-.5)*vec2(FxScreen.x/FxScreen.y,1.);uv.y=-uv.y;
  int id=int(FxParams.x+.5);float blend=FxParams.z;
  vec2 sampleUV=vec2(texCoord.x,1.-texCoord.y);
- vec3 world=texture(Sampler0,sampleUV).rgb;
+ // Short, signature-colored impact fractures; no effect before impact or in reduced-flash mode.
+ float fracture=FxImpact.z,force=clamp(FxImpact.y/2.1,.35,1.8);
+ float clock=floor(max(0.,FxImpact.x)*1.6),row=floor(sampleUV.y*43.);
+ float torn=step(.77,hash1(row*17.+clock*31.));
+ float jitter=(hash1(row+clock*71.)-.5)*torn*.070*fracture*force;
+ vec2 warped=clamp(sampleUV+vec2(jitter,0),vec2(.002),vec2(.998));
+ float split=(.0018+.009*torn)*fracture*force;
+ vec3 world;
+ world.r=texture(Sampler0,clamp(warped+vec2(split,0),vec2(.002),vec2(.998))).r;
+ world.g=texture(Sampler0,warped).g;
+ world.b=texture(Sampler0,clamp(warped-vec2(split,0),vec2(.002),vec2(.998))).b;
+ float fineRow=floor(sampleUV.y*FxScreen.y/3.);
+ float shards=step(.989,hash1(floor(sampleUV.x*90.)+fineRow*113.+clock*271.));
+ vec3 prism=mix(vec3(.10,1.,.90),vec3(.95,.10,1.),step(.5,hash1(row+clock)));
+ prism=mix(prism,FxColor2.rgb,.40);
+ world+=prism*(torn*.18+shards*.48)*fracture*force;
+ float scan=cos(sampleUV.y*FxScreen.y*1.57+clock)*.035*fracture;
+ world*=1.+scan;
+ // A single exposure dip replaces persistent rapid full-screen strobing.
+ world*=1.-.17*fracture*step(2.,FxImpact.x);
  // World insert grading: keep the real terrain visible, only cool the shadows.
  float p=FxParams.y,pre=1.-ease(.98,1.06,p);
  world*=mix(vec3(1),vec3(.79,.85,1.),pre*.55);

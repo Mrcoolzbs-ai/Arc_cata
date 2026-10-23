@@ -293,12 +293,17 @@ if (project.hasProperty('styleqa')) {
   systemProperty 'ac.styleqa', 'true'
   if (project.hasProperty('stylecommandqa')) systemProperty 'ac.stylecommandqa', 'true'
   if (project.hasProperty('stylemovie')) systemProperty 'ac.stylemovie', 'true'
+  if (project.hasProperty('styleimpactmovie')) {
+   systemProperty 'ac.stylemovie', 'true'
+   systemProperty 'ac.styleimpactmovie', 'true'
+  }
+  if (project.hasProperty('stylecompact')) systemProperty 'ac.stylecompact', 'true'
   if (project.hasProperty('styleonly')) {
    systemProperty 'ac.styleonly', project.property('styleonly')
    systemProperty 'ac.styleonly.enabled', 'true'
   }
   gameDirectory = project.file('run-style')
-  programArguments.addAll '--width','960','--height','540'
+  programArguments.addAll '--width','960','--height',(project.hasProperty('stylecompact')?'720':'540')
   jvmArguments.add('-Xmx1500M')
  }
 }

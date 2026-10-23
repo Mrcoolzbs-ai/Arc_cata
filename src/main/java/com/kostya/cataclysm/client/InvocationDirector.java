@@ -37,20 +37,11 @@ public final class InvocationDirector {
         float yaw=(float)(Math.atan2(dir.z,dir.x)*180/Math.PI-90),pitch=(float)(-Math.atan2(dir.y,dir.horizontalDistance())*180/Math.PI);
         yaw=camera.getYRot()+Mth.wrapDegrees(yaw-camera.getYRot())*(float)blend;
         pitch=Mth.lerp((float)blend,camera.getXRot(),pitch);
-        return new ClientEffects.View(pos,yaw,pitch,(float)(Math.sin(charge*Math.PI)*-.85*blend));
+        return new ClientEffects.View(pos,yaw,pitch,0);
     }
     public static void title(GuiGraphics g,ClientEffects.Fx f,float age,int bar){
-        var m=Minecraft.getInstance();int w=g.guiWidth(),h=g.guiHeight();
-        double intro=ClientEffects.smooth((age-8)/14.)*(1-ClientEffects.smooth((age-83)/22.));
-        if(intro>.015){int a=(int)(255*intro),x=24,y=h-bar-65;
-            g.fill(x,y-8,x+25,y-6,(a<<24)|f.spell.color);
-            g.drawString(m.font,Component.translatable("hud.arcane_cataclysm.art",f.spell.tier()),x,y,(a<<24)|0xaab9cc,false);
-            g.pose().pushPose();g.pose().translate(x,y+14,0);g.pose().scale(1.5f,1.5f,1);
-            g.drawString(m.font,f.spell.title(),0,0,(a<<24)|0xf3f5ff,false);g.pose().popPose();
-        }
-        String phase=age<65?"awaken":age<f.spell.impact*.65?"manifest":age<f.spell.impact?"release":"aftermath";
-        g.drawString(m.font,Component.translatable("hud.arcane_cataclysm.phase."+phase),17,Math.max(7,bar/2-4),0xff99acbc,false);
-        int right=w-18;g.drawString(m.font,Component.literal(String.format(java.util.Locale.ROOT,"%02d  /  V",f.spell.tier())),right-42,Math.max(7,bar/2-4),0xffd5dde8,false);
+        InvocationHud.draw(g,f,age,bar);
     }
+
     private InvocationDirector(){}
 }

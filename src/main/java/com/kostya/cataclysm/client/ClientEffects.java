@@ -90,8 +90,8 @@ public final class ClientEffects {
     public static double shake(float partial){
         if(!ClientOptions.SHAKE.get()||mc().player==null)return 0;
         double amount=0;for(Fx f:ACTIVE){double age=f.age(partial)-f.spell.impact;if(age<0||age>90)continue;
-            double distance=mc().player.position().distanceTo(f.packet.target());amount+=Math.exp(-age/22)*Math.min(1,160/Math.max(1,distance))*(f.spell==Spell.LAST_CATACLYSM?2.4:1.2);
-        }return Math.min(amount,3);
+            double distance=mc().player.position().distanceTo(f.packet.target());amount+=ImpactDynamics.shake(age,ImpactDynamics.power(f.spell.tier(),f.spell.radius,f.packet.scale()),distance);
+        }return Math.min(amount,3.8);
     }
     public static View view(Camera camera,float partial){
         Fx f=cinematic();double shake=shake(partial);double t=mc().level==null?0:mc().level.getGameTime()+partial;
@@ -141,7 +141,7 @@ public final class ClientEffects {
         }
         Fx f=cinematic();
         if(f!=null){
-            double age=f.age(partial),fade=smooth(Math.min(age/18,(f.spell.duration-age)/24));int bar=(int)(h*.075*fade);
+            double age=f.age(partial),fade=smooth(Math.min(age/18,(f.spell.duration-age)/24));int bar=(int)(Math.max(h*.075,InvocationDirector.supports(f.spell)?20:0)*fade);
             g.fill(0,0,w,bar,0xff000000);g.fill(0,h-bar,w,h,0xff000000);
             if(InvocationDirector.supports(f.spell))InvocationDirector.title(g,f,(float)age,bar);
             else if(age<65){int a=(int)(255*smooth(Math.min(age/15,(65-age)/15)));if(a>3){
