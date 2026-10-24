@@ -298,6 +298,7 @@ if (project.hasProperty('styleqa')) {
    systemProperty 'ac.styleimpactmovie', 'true'
   }
   if (project.hasProperty('stylecompact')) systemProperty 'ac.stylecompact', 'true'
+  if (project.hasProperty('stylefrom')) systemProperty 'ac.stylefrom', project.property('stylefrom')
   if (project.hasProperty('styleonly')) {
    systemProperty 'ac.styleonly', project.property('styleonly')
    systemProperty 'ac.styleonly.enabled', 'true'

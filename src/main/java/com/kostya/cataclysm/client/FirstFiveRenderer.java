@@ -25,19 +25,11 @@ public final class FirstFiveRenderer {
         float fade=(float)ease(Math.min(age/18.,(f.spell.duration-age)/35.));
         float hold=fade*(float)(after<0?1:Math.max(0,1-after/65.));int c=f.spell.color,c2=f.spell.secondary;
         Vec3 p=f.packet.target(),origin=f.packet.origin();
-        // Performer prologue: three rotating seals climb around the caster, then threads are drawn to the target.
+        // Local performer seals only. No energy tether from the player to the target.
         if(age<f.spell.impact){
             seal(t,c,c2,fade*.8f,t*.3f,(float)ease(age/32.),6);
             FxMesh.disk(origin.add(0,.06,0),3.3,0);
             FxMesh.disk(origin.add(0,2.1*ease(age/45.),0),2.0,0);FxMesh.end();
-            rays(t,c,c2,fade*.38f);
-            for(int k=0;k<6;k++){
-                double a=k*TAU/6+t*.28;Vec3 last=origin.add(radial(a,2.6,.1));
-                for(int j=1;j<13;j++){double u=j/12.,bend=Math.sin(u*Math.PI);
-                    Vec3 q=origin.lerp(p,u).add(radial(a+u*3,2.6*bend,(3+15*s)*bend));
-                    FxMesh.ribbon(last,q,.08+.10*s);last=q;
-                }
-            }FxMesh.end();
         }
         if(after<70){
             seal(t,c,c2,hold*.8f,-t*.11f,(float)ease(age/55.),f.spell==Spell.GLACIAL_RAGNAROK?6:8);
@@ -103,22 +95,25 @@ public final class FirstFiveRenderer {
                     }FxMesh.end();}
             }
             case TEMPEST_WRATH->{
-                // Low-opacity moving cloud puffs leave the branching circuit readable.
-                begin(FxMesh.glow,t,0x27213f,0x746396,hold*.65f,4,1,3,0);
-                for(int k=0;k<22;k++){double a=k*2.399+t*.07;FxMesh.billboard(p.add(radial(a,(23+k%4*12)*s,(95+Math.sin(a)*6)*s*grow)),(17+k%3*5)*s);}FxMesh.end();
-                for(int tier=0;tier<3;tier++){
-                    seal(t,c,c2,hold*.8f,t*(tier%2==0?.17f:-.23f),1,7);
-                    FxMesh.disk(p.add(0,(68+tier*16)*s*grow,0),(25+tier*17)*s*grow,0);FxMesh.end();
-                }
-                rays(t,c,c2,hold*.85f);
-                for(int k=0;k<14;k++){
-                    double a=k*TAU/14;Vec3 q=p.add(radial(a,(25+k%2*28)*s,.6));
-                    Vec3 last=p.add(radial(a,14*s,96*s*grow));double pulse=.35+.65*Math.pow(.5+.5*Math.sin(t*2.5+k*1.7),6);
-                    for(int j=1;j<=11;j++){
-                        double u=j/11.;Vec3 next=p.add(radial(a,(14+(11+k%2*28)*u)*s,(96*grow*(1-u))*s)).add(Math.sin(j*17+k*3)*5*s,Math.cos(j*9+k)*2*s,Math.cos(j*11+k*5)*5*s);
-                        FxMesh.tint(k%2==0?c:c2,hold*(float)pulse);FxMesh.ribbon(last,next,(after<0?.25:1.2)*s);
-                        if(j==5)FxMesh.ribbon(next,next.add(radial(a+.7,14*s,-9*s)),.18*s);last=next;
+                // An ascending, hollow storm funnel, not a ceiling-disc with straight strings.
+                begin(FxMesh.glow,t,0x172632,0x7bcfff,hold*.32f,4,1,3,0);
+                for(int k=0;k<52;k++){
+                    double u=k/51.,a=k*2.399-t*(.9+u),radius=(8+37*u*u)*s*grow;
+                    FxMesh.billboard(p.add(radial(a,radius,(8+100*u)*s*grow)),(7+u*14)*s);
+                }FxMesh.end();
+                begin(FxMesh.surface,t,0x39444e,0x9eeaff,hold,2,1,4,0);
+                for(int k=0;k<7;k++){double a=k*TAU/7;FxMesh.crystal(p.add(radial(a,44*s,0)),(16+k%3*6)*s*grow,3*s,a);}FxMesh.end();
+                rays(t,0xd9f4ff,0x62b9ff,hold*.8f);
+                for(int k=0;k<9;k++){
+                    double u=(k+.5)/9.,a=k*2.399-t*.75;Vec3 last=p.add(radial(a,(10+32*u*u)*s,(18+86*u)*s));
+                    for(int q=1;q<=9;q++){
+                        double v=q/9.,angle=a+v*2.2;Vec3 next=p.add(radial(angle,(10+32*u*u-7*v)*s,(18+86*u-32*v)*s)).add(Math.sin(q*17+k)*3*s,0,Math.cos(q*11+k)*3*s);
+                        FxMesh.ribbon(last,next,.15*s);last=next;
                     }
+                }
+                double strike=ease((charge-.84)/.16);
+                if(strike>0||after>=0){Vec3 last=p.add(0,110*s,0);
+                    for(int q=1;q<=14;q++){double u=q/14.;Vec3 next=p.add(Math.sin(q*13)*4*s*(1-u),110*s*(1-u),Math.cos(q*19)*4*s*(1-u));FxMesh.ribbon(last,next,(.3+strike*1.2)*s);last=next;}
                 }FxMesh.end();
             }
             case STARFALL->{

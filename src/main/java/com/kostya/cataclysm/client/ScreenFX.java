@@ -11,7 +11,7 @@ import org.lwjgl.opengl.GL30;
 
 /** Astral inserts are a separate procedural scene, NOT a camera teleported into unloaded world chunks. */
 public final class ScreenFX {
-    public static ShaderInstance shader,invocation;
+    public static ShaderInstance shader,invocation,saga;
     private static TextureTarget copy;
     public static void render(GuiGraphics gui,DeltaTracker delta){
         if(shader==null||ClientEffects.ACTIVE.isEmpty()||!ClientOptions.POST.get())return;
@@ -33,7 +33,7 @@ public final class ScreenFX {
         main.bindWrite(true);
         RenderSystem.disableDepthTest();RenderSystem.depthMask(false);RenderSystem.disableBlend();RenderSystem.disableCull();
         boolean directed=InvocationDirector.supports(f.spell)&&ClientEffects.cinematic()==f&&invocation!=null;
-        ShaderInstance active=directed?invocation:shader;
+        ShaderInstance active=directed?(InvocationDirector.epic(f.spell)&&saga!=null?saga:invocation):shader;
         RenderSystem.setShaderColor(1,1,1,1);RenderSystem.setShader(()->active);RenderSystem.setShaderTexture(0,copy.getColorTextureId());
         active.safeGetUniform("FxParams").set((float)(directed?f.spell.ordinal():f.spell.visualId()),phase,directed?InvocationDirector.theatre(f,age):realm,directed?(ClientOptions.FLASH.get()?1f:0f):shock);
         active.safeGetUniform("FxColor2").set(((f.spell.color>>16)&255)/255f,((f.spell.color>>8)&255)/255f,(f.spell.color&255)/255f,ClientOptions.BLOOM.get().floatValue());

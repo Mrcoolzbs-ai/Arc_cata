@@ -25,7 +25,8 @@ public final class SpellRenderer {
         float age=f.age(partial),time=age/20f;double before=Math.min(1,age/f.spell.impact),after=age-f.spell.impact;
         float fade=(float)ClientEffects.smooth(Math.min(age/16,(f.spell.duration-age)/30d));
         Vec3 p=f.packet.target();double s=f.packet.scale(),r=f.radius();int c=f.spell.color,c2=f.spell.secondary;
-        if(InvocationDirector.supports(f.spell)){FirstFiveRenderer.draw(f,partial);return;}
+        if(f.spell.ordinal()<5){FirstFiveRenderer.draw(f,partial);return;}
+        if(f.spell.ordinal()<9){SecondFourRenderer.draw(f,partial);return;}
         // Each invocation starts with rotating, procedurally inscribed seals, not static particle spam.
         if(after<55){
             float a=fade*(float)(after<0?1:Math.max(0,1-after/55));

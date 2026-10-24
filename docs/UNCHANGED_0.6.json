@@ -1,0 +1,14 @@
+{
+  "src/main/java/com/kostya/cataclysm/Spell.java": "d37a7fad3b94163ff811b1d3e50cb5585d8b59e0238e2cc4991b424e09f686d3",
+  "src/main/java/com/kostya/cataclysm/ImpactDynamics.java": "367a0d0123ab5d5f18d895e99b22ed0039205f8b908344c98b3be1e8b5396f2b",
+  "src/main/java/com/kostya/cataclysm/world/DestructionEngine.java": "722570853a8bba0c609f065cc83b200c36962800c3c2e2b1d7a0fa2f8e7009c6",
+  "src/main/java/com/kostya/cataclysm/world/DestructionPlan.java": "1887a198f94abd3d39a90300d19cb3f0510d80d5f8e7b053cd256bd239a4644d",
+  "src/main/java/com/kostya/cataclysm/world/PreparedChunk.java": "d219a8182dcad5d69977689fc2d940520873a3dbd345de285368dd0d0f51d056",
+  "src/main/java/com/kostya/cataclysm/world/EndEvent.java": "e6f72ff63daec374a66c63ef6f6207974c7a8642306ea746a33e2ef5b105836f",
+  "src/main/java/com/kostya/cataclysm/world/EndSchedule.java": "a502cbba50c434f62f0c8077fc9a924875828f9ba2ed9301e6c795c32e057046",
+  "src/main/java/com/kostya/cataclysm/network/SpellNetwork.java": "0573c3652d0050b740d2d3bdf67c74478f3cd9e73318764ee90634deea7405d8",
+  "src/main/java/com/kostya/cataclysm/client/EndCinematic.java": "ce1e9c795c844d198deea5b5941df96e27679367def2ee000914645d4522df52",
+  "src/main/resources/assets/arcane_cataclysm/sounds/end_of_all_charge.ogg": "7eaa03bb4bd05d338d8b9b8bb0a98f6d8af939597bdecad048461a40d0a80f8e",
+  "src/main/resources/assets/arcane_cataclysm/sounds/end_of_all_impact.ogg": "796560651da9759103259614d54b115bc8cfae7a22c6d9465a1e5bf97b4d9712",
+  "src/main/resources/assets/arcane_cataclysm/shaders/core/end_scene.fsh": "98bc27eec3efb1e6e721c1d840443c7102484ac90c6847f19e5f3dc781e6d2cf"
+}

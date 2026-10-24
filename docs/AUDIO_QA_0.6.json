@@ -1,0 +1,182 @@
+[
+  {
+    "file": "heavens_lance_charge.ogg",
+    "integrated_lufs": -18.64,
+    "true_peak_dbtp": -7.41,
+    "lra_lu": 0.7
+  },
+  {
+    "file": "heavens_lance_impact.ogg",
+    "integrated_lufs": -17.39,
+    "true_peak_dbtp": -7.75,
+    "lra_lu": 1.6
+  },
+  {
+    "file": "thousand_blades_charge.ogg",
+    "integrated_lufs": -18.61,
+    "true_peak_dbtp": -1.67,
+    "lra_lu": 3.4
+  },
+  {
+    "file": "thousand_blades_impact.ogg",
+    "integrated_lufs": -15.92,
+    "true_peak_dbtp": -1.89,
+    "lra_lu": 10.5
+  },
+  {
+    "file": "snow_grave_charge.ogg",
+    "integrated_lufs": -18.55,
+    "true_peak_dbtp": -3.4,
+    "lra_lu": 2.9
+  },
+  {
+    "file": "snow_grave_impact.ogg",
+    "integrated_lufs": -18.67,
+    "true_peak_dbtp": -4.06,
+    "lra_lu": 9.9
+  },
+  {
+    "file": "tempest_wrath_charge.ogg",
+    "integrated_lufs": -18.21,
+    "true_peak_dbtp": -3.32,
+    "lra_lu": 2.5
+  },
+  {
+    "file": "tempest_wrath_impact.ogg",
+    "integrated_lufs": -18.69,
+    "true_peak_dbtp": -1.87,
+    "lra_lu": 4.0
+  },
+  {
+    "file": "starfall_charge.ogg",
+    "integrated_lufs": -18.49,
+    "true_peak_dbtp": -4.23,
+    "lra_lu": 2.1
+  },
+  {
+    "file": "starfall_impact.ogg",
+    "integrated_lufs": -17.66,
+    "true_peak_dbtp": -3.46,
+    "lra_lu": 1.8
+  },
+  {
+    "file": "tectonic_rift_charge.ogg",
+    "integrated_lufs": -18.34,
+    "true_peak_dbtp": -3.26,
+    "lra_lu": 2.2
+  },
+  {
+    "file": "tectonic_rift_impact.ogg",
+    "integrated_lufs": -19.01,
+    "true_peak_dbtp": -2.2,
+    "lra_lu": 4.5
+  },
+  {
+    "file": "inferno_tide_charge.ogg",
+    "integrated_lufs": -17.94,
+    "true_peak_dbtp": -4.36,
+    "lra_lu": 2.7
+  },
+  {
+    "file": "inferno_tide_impact.ogg",
+    "integrated_lufs": -18.82,
+    "true_peak_dbtp": -4.48,
+    "lra_lu": 3.9
+  },
+  {
+    "file": "singularity_charge.ogg",
+    "integrated_lufs": -18.15,
+    "true_peak_dbtp": -2.11,
+    "lra_lu": 2.7
+  },
+  {
+    "file": "singularity_impact.ogg",
+    "integrated_lufs": -17.51,
+    "true_peak_dbtp": -3.67,
+    "lra_lu": 1.7
+  },
+  {
+    "file": "solar_nova_charge.ogg",
+    "integrated_lufs": -18.58,
+    "true_peak_dbtp": -6.55,
+    "lra_lu": 1.2
+  },
+  {
+    "file": "solar_nova_impact.ogg",
+    "integrated_lufs": -17.32,
+    "true_peak_dbtp": -7.48,
+    "lra_lu": 1.6
+  },
+  {
+    "file": "last_cataclysm_charge.ogg",
+    "integrated_lufs": -17.66,
+    "true_peak_dbtp": -1.82,
+    "lra_lu": 3.1
+  },
+  {
+    "file": "last_cataclysm_impact.ogg",
+    "integrated_lufs": -19.9,
+    "true_peak_dbtp": -1.86,
+    "lra_lu": 7.1
+  },
+  {
+    "file": "verdant_ruin_charge.ogg",
+    "integrated_lufs": -18.13,
+    "true_peak_dbtp": -2.19,
+    "lra_lu": 3.6
+  },
+  {
+    "file": "verdant_ruin_impact.ogg",
+    "integrated_lufs": -18.39,
+    "true_peak_dbtp": -2.84,
+    "lra_lu": 3.4
+  },
+  {
+    "file": "obsidian_cathedral_charge.ogg",
+    "integrated_lufs": -18.53,
+    "true_peak_dbtp": -5.28,
+    "lra_lu": 2.2
+  },
+  {
+    "file": "obsidian_cathedral_impact.ogg",
+    "integrated_lufs": -17.58,
+    "true_peak_dbtp": -4.67,
+    "lra_lu": 1.7
+  },
+  {
+    "file": "abyssal_deluge_charge.ogg",
+    "integrated_lufs": -18.07,
+    "true_peak_dbtp": -1.9,
+    "lra_lu": 3.7
+  },
+  {
+    "file": "abyssal_deluge_impact.ogg",
+    "integrated_lufs": -19.12,
+    "true_peak_dbtp": -3.03,
+    "lra_lu": 4.2
+  },
+  {
+    "file": "world_sunder_charge.ogg",
+    "integrated_lufs": -18.38,
+    "true_peak_dbtp": -3.87,
+    "lra_lu": 2.5
+  },
+  {
+    "file": "world_sunder_impact.ogg",
+    "integrated_lufs": -18.96,
+    "true_peak_dbtp": -1.8,
+    "lra_lu": 4.2
+  },
+  {
+    "file": "rune_apocalypse_charge.ogg",
+    "integrated_lufs": -18.29,
+    "true_peak_dbtp": -4.66,
+    "lra_lu": 2.9
+  },
+  {
+    "file": "rune_apocalypse_impact.ogg",
+    "integrated_lufs": -17.37,
+    "true_peak_dbtp": -5.52,
+    "lra_lu": 1.5
+  }
+]

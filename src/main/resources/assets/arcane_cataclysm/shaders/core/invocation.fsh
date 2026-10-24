@@ -1,6 +1,6 @@
 #version 150
 #moj_import <arcane_cataclysm:ac_common.glsl>
-// Five authored invocation tableaux. Analytic 3-D intersections, not a pre-rendered movie.
+// Nine authored invocation tableaux. Analytic 3-D intersections, not a pre-rendered movie.
 // Camera and choreography are driven only by cast age; no world loads, entities or terrain edits.
 uniform sampler2D Sampler0;
 uniform vec4 ColorModulator;
@@ -236,57 +236,50 @@ void frost(){
  col+=vec3(.6,.9,1.3)*snow*3.;
 }
 void storm(){
- float build=ease(.08,.6,phase),release=ease(.76,.98,phase);
- // Storm crown is a toroidal, noisy cloud ceiling, not a flat opaque disc.
- vec3 center=vec3(0,18.,0);float den=rd.y;
- if(abs(den)>.001){float t=(18.-ro.y)/den;if(t>0.){
-  vec3 p=ro+rd*t-center;float r=length(p.xz),a=atan(p.z,p.x);
-  float n=acFbm(vec3(p.xz*.17,tm*.07));
-  float cloud=exp(-pow((r-9.)/5.5,2.))*(.3+n*.7)*build;
-  vec3 lit=mix(vec3(.055,.035,.12),vec3(.23,.16,.42),n);
-  col=mix(col,lit,cloud*.86);
-  float swirl=pow(max(0.,sin(a*5.+r*.55-tm*.65)),18.);
-  col+=mix(primary,accent,n)*swirl*cloud*.35;
- }}
- // Shallow volumetric torus. Noise erodes both the silhouette and its interior (no billboard/sphere bubbles).
+ float build=ease(.08,.55,phase),release=ease(.81,1.,phase);
+ // A hollow rotating supercell: concentric helical volumes, never a flat cloud plane.
  vec3 inv=1./(rd+vec3(.00001));
- vec3 b0=(vec3(-17.,13.,-17.)-ro)*inv,b1=(vec3(17.,23.,17.)-ro)*inv;
+ vec3 b0=(vec3(-18.,0.,-18.)-ro)*inv,b1=(vec3(18.,30.,18.)-ro)*inv;
  vec3 lo=min(b0,b1),hi=max(b0,b1);
  float enter=max(0.,max(lo.x,max(lo.y,lo.z))),leave=min(hi.x,min(hi.y,hi.z));
  if(leave>enter){
-  float stride=(leave-enter)/16.,trans=1.;vec3 mist=vec3(0);
-  for(int i=0;i<16;i++){
-   vec3 q=ro+rd*(enter+(float(i)+.5)*stride);float r=length(q.xz);
-   float n=acNoise(q*.48+vec3(0,tm*.10,tm*.035))*.68+acNoise(q*.97-vec3(tm*.03,0,0))*.32;
-   float shell=exp(-pow((r-9.)/5.7,2.))*exp(-pow((q.y-18.)/2.9,2.));
-   float density=ease(.33,.72,n)*shell*build;
-   float alpha=1.-exp(-density*stride*.65);
-   vec3 lit=mix(vec3(.025,.028,.07),vec3(.19,.13,.34),n*n);
-   lit+=primary*.08*exp(-r*.17)*(.4+.6*n);
+  float stride=(leave-enter)/28.,trans=1.;vec3 mist=vec3(0);
+  for(int i=0;i<28;i++){
+   vec3 q=ro+rd*(enter+(float(i)+.5)*stride);float y=q.y/28.,r=length(q.xz),a=atan(q.z,q.x);
+   float radius=1.6+11.*y*y;
+   float spiral=sin(a*3.-y*13.+tm*1.35+r*.3);
+   float n=acNoise(q*.64+vec3(tm*.12,0,tm*.08));
+   float shell=band(r-radius,1.1+y*2.2)*ease(0.,.15,y)*(1.-ease(.88,1.1,y));
+   float density=shell*(.25+.75*ease(-.6,.5,spiral+n*.8))*build;
+   float alpha=1.-exp(-density*stride*.70);
+   vec3 lit=mix(vec3(.012,.022,.045),vec3(.11,.22,.31),n);
+   lit+=vec3(.18,.52,.80)*pow(max(0.,spiral),12.)*.2;
    mist+=lit*alpha*trans;trans*=1.-alpha;
-  }
-  col=col*trans+mist;
+  }col=col*trans+mist;
  }
- beam(vec3(0,2.,0),center,.13,accent,build*.5);
- beam(vec3(0,2.,0),center,.025,vec3(.7,1.1,2.2),build*.8);
- seal(center,vec3(0,1,0),7.0,tm*.16,1.,2.);
- seal(center+vec3(0,.3,0),vec3(0,1,0),3.2,-tm*.25,.8,0.);
- spark(center,.33,vec3(.8,.7,2.),2.);
- // Seven conductors, each has a persistent branch path with smoothly travelling pulse.
- for(int i=0;i<7;i++){
-  float k=float(i),a=k*TAU/7.;vec3 end=vec3(cos(a)*10.,.3,sin(a)*10.);
-  beam(end,end+vec3(0,4.*build,0),.10,accent,.8);
-  vec3 last=center+vec3(cos(a)*6.,0,sin(a)*6.);
-  float pulse=.35+.65*pow(.5+.5*sin(tm*2.0+k*2.1),6.);
+ for(int k=0;k<7;k++){
+  float a=float(k)*TAU/7.;vec3 p=vec3(cos(a)*12.5,0,sin(a)*12.5);
+  crystal(p,3.+float(k%3),.65,a,build);
+ }
+ // Lightning crawls around the funnel before one branching stroke reaches the ground.
+ for(int k=0;k<5;k++){
+  float y=6.+float(k)*4.,a=float(k)*2.399-tm*.6;
+  vec3 last=vec3(cos(a)*(2.+y*.23),y,sin(a)*(2.+y*.23));
+  float pulse=.18+.82*pow(.5+.5*sin(tm*1.7+float(k)*2.3),8.);
   for(int j=1;j<=8;j++){
-   float u=float(j)/8.,jitter=sin(float(j)*31.+k*7.);
-   vec3 p=mix(center,end,u)+vec3(jitter*1.3,sin(float(j)*7.+k)*.5,cos(float(j)*17.+k)*1.3)*(j==8?0.:1.);
-   beam(last,p,.04+release*.055,mix(primary,vec3(1.3,1.5,2.1),.55),(.3+pulse*.9)*build);
-   if(j==4)beam(p,p+vec3(cos(a+.8)*3.,-2.,sin(a+.8)*3.),.017,accent,pulse);
-   last=p;
+   float u=float(j)/8.,b=a+u*1.7,yy=y-u*3.;
+   vec3 next=vec3(cos(b)*(2.+yy*.23),yy,sin(b)*(2.+yy*.23));
+   next+=vec3(sin(float(j)*31.),cos(float(j)*13.),sin(float(j)*17.))*.32;
+   beam(last,next,.035,vec3(.7,1.4,2.),pulse*build);last=next;
   }
  }
- for(int i=0;i<3;i++)seal(vec3(0,3.+float(i)*4.,0),vec3(0,1,0),5.+float(i),tm*.08,.25*build,2.);
+ if(release>.001){vec3 last=vec3(0,23.,0);
+  for(int j=1;j<=14;j++){
+   float u=float(j)/14.;vec3 next=vec3(sin(float(j)*17.)*1.3*(1.-u),23.*(1.-u),cos(float(j)*11.)*1.3*(1.-u));
+   beam(last,next,.045+release*.07,vec3(1.1,1.6,2.),release*1.15);
+   if(j==6||j==9)beam(next,next+vec3(3.,-3.,-1.),.025,accent,release*.7);last=next;
+  }
+ }
 }
 void starfall(){
  float summon=ease(.08,.40,phase),fall=ease(.64,1.,phase);
@@ -322,10 +315,99 @@ void starfall(){
   spark(p,.15,mix(primary,accent,.5),.8*summon);
  }
 }
+// Authored counterparts of world-space spells 6–9.
+void rock(vec3 center,vec3 size,float hot){
+ vec3 inv=1./(rd+vec3(.000001)),a=(center-size-ro)*inv,b=(center+size-ro)*inv;
+ vec3 lo=min(a,b),hi=max(a,b);float t=max(lo.x,max(lo.y,lo.z)),end=min(hi.x,min(hi.y,hi.z));
+ if(t<0.||t>end||t>opaqueDepth)return;vec3 q=ro+rd*t-center;
+ vec3 normal=abs(q/size);float light=normal.y>max(normal.x,normal.z)?.8:normal.x>normal.z?.35:.18;
+ float n=acNoise((q+center)*1.8);col=vec3(.08,.07,.07)*light*(.7+n*.5)+primary*hot*(pow(1.-abs(n-.5)*2.,28.)*.8+.025);
+ opaqueDepth=t;
+}
+void rift(){
+ float open=ease(.14,.92,phase),rise=ease(.12,.55,phase);
+ for(int k=-7;k<=7;k++)for(int side=-1;side<=1;side+=2){
+  float z=float(k)*2.5,gap=1.+open*3.8+sin(z*.6)*.5;
+  rock(vec3(float(side)*(gap+2.0),-.8+sin(float(k)*2.3)*rise,z),vec3(2.,1.5+rise*float((k+9)%3)*.65,1.1),.13);
+ }
+ for(int k=-12;k<12;k++){
+  float z=float(k)*1.5;vec3 a=vec3(sin(z*1.2)*.55,.15,z),b=vec3(sin((z+1.5)*1.2)*.55,.15,z+1.5);
+  beam(a,b,.09+open*.20,vec3(2.,.35,.03),.8);
+  if(k%3==0)beam(a,vec3(float(k%2==0?1:-1)*(4.+open*5.),.2,z+2.),.045,primary,open*.5);
+ }
+ seal(vec3(0,11.,0),vec3(0,1,0),9.5,-tm*.05,.42*rise,2.);
+ for(int k=0;k<10;k++){float a=float(k)*2.399;rock(vec3(cos(a)*10.,5.+sin(tm*.5+float(k))*2.,sin(a)*10.),vec3(.65,1.1,.7)*rise,.15);}
+}
+float lavaField(vec3 q,float grow,float surge){
+ float r=length(q.xz),an=atan(q.z,q.x),crest=3.+grow*(5.+sin(an*3.-tm*.8)*2.)+surge*3.;
+ float shell=abs(r-(5.+surge*7.+pow(q.y/crest,2.)*3.))-.7;
+ return max(shell,max(q.y-crest,-q.y));
+}
+void inferno(){
+ float grow=ease(.08,.55,phase),surge=ease(.65,1.,phase);
+ // Three fluid crests with thickness and a dark molten face, sampled only inside a bounded volume.
+ vec3 inv=1./(rd+vec3(.00001));vec3 a=(vec3(-18.,0.,-18.)-ro)*inv,b=(vec3(18.,17.,18.)-ro)*inv;
+ vec3 lo=min(a,b),hi=max(a,b);float enter=max(0.,max(lo.x,max(lo.y,lo.z))),leave=min(hi.x,min(hi.y,hi.z));
+ if(leave>enter){float t=enter;
+  for(int i=0;i<112;i++){
+   if(t>leave||t>opaqueDepth)break;
+   vec3 q=ro+rd*t;float r=length(q.xz),an=atan(q.z,q.x);
+   float field=lavaField(q,grow,surge);
+   if(field<.018){
+    // Conservative distance tracing keeps the thin crest continuous at grazing angles.
+    r=length(q.xz);an=atan(q.z,q.x);
+    float crest=3.+grow*(5.+sin(an*3.-tm*.8)*2.)+surge*3.;
+    float n=acFbm(q*.7+vec3(0,-tm,0)),lip=ease(crest-1.0,crest,q.y);
+    col=mix(vec3(.11,.018,.012),vec3(1.6,.21,.012),pow(n,3.))+vec3(1.4,.45,.035)*lip;
+    opaqueDepth=t;break;
+   }
+   t+=max(.018,field*.40);
+  }
+ }
+ for(int i=0;i<16;i++){float k=float(i),an=k*2.399;vec3 p=vec3(cos(an)*(6.+surge*7.),mod(k*1.7+tm*2.,16.),sin(an)*(6.+surge*7.));spark(p,.07,vec3(1.5,.5,.04),grow);}
+ seal(vec3(0,.1,0),vec3(0,1,0),15.,tm*.03,.4,2.);
+}
+void singularity(){
+ float build=ease(.08,.55,phase),collapse=ease(.76,1.,phase);vec3 center=vec3(0,10.,0);float radius=(2.+build*2.)*(1.-collapse*.25);
+ vec3 oc=ro-center;float t=sphereHit(center,radius);float along=dot(center-ro,rd),dist=length(ro+rd*max(0.,along)-center);
+ if(along>0.){
+  col+=vec3(.36,.18,1.2)*band(dist-radius,radius*.18)*.7;
+  col+=vec3(.25,.68,1.5)*band(dist-radius*1.23,radius*.035)*1.2;
+ }
+ if(t>0.&&t<opaqueDepth){col=vec3(.0008,.0003,.003);opaqueDepth=t;}
+ // Tilted accretion ribbons, backed by orbiting stone pulled into the event horizon.
+ vec3 normal=normalize(vec3(.18,1.,.38));float den=dot(rd,normal);
+ if(abs(den)>.001){float d=dot(center-ro,normal)/den;vec3 q=ro+rd*d-center;float r=length(q);
+  if(d>0.&&d<opaqueDepth&&r>radius*1.12&&r<radius*3.3){float a=atan(q.z,q.x),n=acNoise(q*2.+vec3(tm,0,0));
+   float bands=pow(.5+.5*sin(r*8.-a*2.-tm*2.),4.);col+=mix(vec3(.12,.3,1.),vec3(1.1,.5,1.5),n)*bands*exp(-(r-radius)*.3)*1.2;
+  }
+ }
+ for(int i=0;i<18;i++){float k=float(i),a=k*2.399+tm*(.20+hash1(k)*.12),r=(8.+hash1(k+2.)*6.)*(1.-collapse*.65);
+  rock(center+vec3(cos(a)*r,sin(a*1.7)*2.,sin(a)*r),vec3(.25,.45,.3)*(1.-collapse*.4),.08);
+ }
+}
+void nova(){
+ float grow=ease(.08,.60,phase),compress=ease(.69,.90,phase),release=ease(.9,1.,phase);vec3 center=vec3(0,12.,0);float radius=(2.+grow*4.)*(1.-compress*.18)+release*1.2;
+ float t=sphereHit(center,radius);float d=dot(center-ro,rd),r=length(ro+rd*max(0.,d)-center);
+ if(d>0.)col+=vec3(1.1,.27,.02)*band(r-radius,radius*.14)*(.7+release*.4);
+ if(t>0.&&t<opaqueDepth){vec3 n=normalize(ro+rd*t-center);float f=acFbm(n*9.+vec3(0,tm*.2,0));
+  col=mix(vec3(.65,.075,.004),vec3(2.3,1.3,.18),f)+vec3(1.5,.35,.015)*pow(1.-abs(dot(n,rd)),4.);opaqueDepth=t;
+ }
+ for(int k=0;k<8;k++){float a=float(k)*TAU/8.+tm*.04;vec3 v=vec3(cos(a),sin(a),0),side=vec3(-sin(a),cos(a),0),last=center+v*radius;
+  for(int q=1;q<=14;q++){float u=float(q)/14.;vec3 next=center+v*(radius+sin(u*PI)*(2.+release*6.))+side*sin(u*TAU)*1.2+vec3(0,0,(u-.5)*radius);
+   beam(last,next,.04,vec3(2.,.50,.025),.8*grow);last=next;}
+ }
+ seal(vec3(0,1.,0),vec3(0,1,0),12.,-tm*.05,.35,0.);
+}
 vec3 theatre(vec2 uv,int id){
  phase=FxParams.y;tm=FxTime;
  primary=id==0?vec3(1.6,1.05,.34):id==1?vec3(.20,1.5,1.27):id==2?vec3(.36,1.22,1.8):id==3?vec3(1.05,.43,1.9):vec3(1.9,.65,.10);
  accent=id==0?vec3(.10,.52,1.2):id==1?vec3(.12,.25,1.4):id==2?vec3(.08,.24,.72):id==3?vec3(.19,.27,1.35):vec3(.70,.045,.10);
+ if(id==3){primary=vec3(.55,1.2,1.8);accent=vec3(.12,.38,.75);}
+ if(id==5){primary=vec3(1.9,.48,.09);accent=vec3(.42,.21,.15);}
+ if(id==6){primary=vec3(1.9,.48,.035);accent=vec3(.65,.045,.02);}
+ if(id==7){primary=vec3(.7,.30,1.7);accent=vec3(.13,.55,1.2);}
+ if(id==8){primary=vec3(2.,1.2,.25);accent=vec3(1.1,.13,.015);}
  // Smoothly connected close reveal -> orbiting wide -> rising hero -> final dive.
  float reveal=ease(.10,.32,phase),hero=ease(.32,.69,phase),dive=ease(.75,.99,phase);
  float angle=mix(-.38,.42,hero)+float(id)*.12;
@@ -335,14 +417,17 @@ vec3 theatre(vec2 uv,int id){
  vec3 focus=vec3(0,mix(11.,14.,hero)-dive*3.,0);
  if(id==1){ro.y=8.+hero*11.;focus.y=12.-dive*4.;radius=36.;ro.xz=vec2(sin(angle),-cos(angle))*radius;}
  if(id==2){ro.y=5.+hero*9.;focus.y=9.;}
- if(id==3){ro.y=3.+hero*11.;focus.y=13.;}
+ if(id==3){ro=vec3(-12.+hero*16.,10.+hero*8.,-39.);focus=vec3(0,14.,0);}
  if(id==4){ro=vec3(-14.+hero*20.,7.+hero*7.,-26.+dive*6.);focus=vec3(-2.+dive*4.,12.-dive*7.,0.);}
+ if(id==5){ro=vec3(-19.+hero*10.,13.+hero*4.,-26.+dive*9.);focus=vec3(0,1.,0);}
+ if(id==6){ro=vec3(-22.+hero*12.,6.+hero*7.,-28.);focus=vec3(0,6.,0);}
+ if(id==7||id==8){focus=vec3(0,11.,0);ro=vec3(sin(angle)*34.,10.+hero*6.,-cos(angle)*34.);}
  vec3 forward=normalize(focus-ro),right=normalize(cross(forward,vec3(0,1,0))),up=cross(right,forward);
  float lens=mix(1.19,.95,reveal)+hero*.045;
  rd=normalize(forward*lens+right*uv.x+up*uv.y);
  opaqueDepth=100000.;col=background(rd,id);
  floorScene();
- if(id==0)lance();else if(id==1)blades();else if(id==2)frost();else if(id==3)storm();else starfall();
+ if(id==0)lance();else if(id==1)blades();else if(id==2)frost();else if(id==3)storm();else if(id==4)starfall();else if(id==5)rift();else if(id==6)inferno();else if(id==7)singularity();else nova();
  particles(id);
  col+=accent*exp(-rd.y*rd.y*90.)*.055;
  // Very restrained optical bloom and veil: bright core never blanks the whole composition.

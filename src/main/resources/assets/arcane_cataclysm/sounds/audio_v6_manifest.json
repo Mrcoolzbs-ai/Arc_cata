@@ -1,0 +1,182 @@
+[
+  {
+    "file": "heavens_lance_charge.ogg",
+    "seconds": 18.0,
+    "channels": 2,
+    "sha256": "4143946a98ae3d71eda66e4a19ea2fad6a2b158845e05fbaf8bc88c5056d7be5"
+  },
+  {
+    "file": "heavens_lance_impact.ogg",
+    "seconds": 8.0,
+    "channels": 2,
+    "sha256": "0b396d5286b3371acf5cb7b1aba9936106cb4b98f4de0b13b8545fa0fdbe64d0"
+  },
+  {
+    "file": "thousand_blades_charge.ogg",
+    "seconds": 20.0,
+    "channels": 2,
+    "sha256": "f81e681937bc18b65553da7ccb36645ff87222aec53cce0a9a1a545b9e6cf6f6"
+  },
+  {
+    "file": "thousand_blades_impact.ogg",
+    "seconds": 8.0,
+    "channels": 2,
+    "sha256": "43244af6c3c4b916cef8ac7e0ca564cfcbefbd3006e29170f44c6b95bd98acd4"
+  },
+  {
+    "file": "snow_grave_charge.ogg",
+    "seconds": 21.0,
+    "channels": 2,
+    "sha256": "50f40b109851d2441a2264d034dde89ea1acd1d2642c90c8e5c63177c5cecdcb"
+  },
+  {
+    "file": "snow_grave_impact.ogg",
+    "seconds": 8.0,
+    "channels": 2,
+    "sha256": "7b280ee6a16383369923e9aa05943c463b5b2e777a2aa6fa428995ea07e66d59"
+  },
+  {
+    "file": "tempest_wrath_charge.ogg",
+    "seconds": 22.0,
+    "channels": 2,
+    "sha256": "29fcbc5352a875301e72e76fd121a7726fda8a10a3c0569a876cd85c5ecf4dfc"
+  },
+  {
+    "file": "tempest_wrath_impact.ogg",
+    "seconds": 8.0,
+    "channels": 2,
+    "sha256": "616921ec5deda4ab40ba53c940c97b4f9dfa2320e9eac07ae465114bd71502d7"
+  },
+  {
+    "file": "starfall_charge.ogg",
+    "seconds": 21.0,
+    "channels": 2,
+    "sha256": "3243a6a9acfa55aa77ff589c36fee6efbc24b030d2c58b5e821eeac694a553b0"
+  },
+  {
+    "file": "starfall_impact.ogg",
+    "seconds": 8.0,
+    "channels": 2,
+    "sha256": "f6427339271d3e6a0e2a9a2817652fa6ba0d7dc431b291836aaaf4da16873c25"
+  },
+  {
+    "file": "tectonic_rift_charge.ogg",
+    "seconds": 23.0,
+    "channels": 2,
+    "sha256": "0cb33ef793841bce99b515097aa5027f0d600719d6837d9af63b3b0dc49f7493"
+  },
+  {
+    "file": "tectonic_rift_impact.ogg",
+    "seconds": 8.0,
+    "channels": 2,
+    "sha256": "9216f0c637a76aa522a8c84d1ee7700c4bcb0c398833e8c29b7a11f69cb2fb5f"
+  },
+  {
+    "file": "inferno_tide_charge.ogg",
+    "seconds": 24.0,
+    "channels": 2,
+    "sha256": "129b0f904c5c62af18346089f85e9a91ea52ce8c3cac236e881680386c04d46e"
+  },
+  {
+    "file": "inferno_tide_impact.ogg",
+    "seconds": 8.0,
+    "channels": 2,
+    "sha256": "8461b31b37d3bb541bf46ba8ae706248a8b5ec40c002d15bb5cc0f5d959e950c"
+  },
+  {
+    "file": "singularity_charge.ogg",
+    "seconds": 25.0,
+    "channels": 2,
+    "sha256": "02c262599e9566542ab07c64e94d63c38fa2eaa63e8a22e08662d4e16bb52b62"
+  },
+  {
+    "file": "singularity_impact.ogg",
+    "seconds": 8.0,
+    "channels": 2,
+    "sha256": "c87748d7ca5abb64bc41a4ca82adaad5d7cc22c29e33f47650507752b219406d"
+  },
+  {
+    "file": "solar_nova_charge.ogg",
+    "seconds": 26.0,
+    "channels": 2,
+    "sha256": "2da0335154b9225b7b149c4673227b32918d590c5d3f124299f8dbbc4af6845e"
+  },
+  {
+    "file": "solar_nova_impact.ogg",
+    "seconds": 8.0,
+    "channels": 2,
+    "sha256": "faeb7419aca33d690aa541250881fb882f13830f397c4d83813c8b9cc0177e46"
+  },
+  {
+    "file": "last_cataclysm_charge.ogg",
+    "seconds": 29.0,
+    "channels": 2,
+    "sha256": "2530fa1c3d6db2403f4500538ab6ff9e8146f576def53c8af2e80140d0e33f26"
+  },
+  {
+    "file": "last_cataclysm_impact.ogg",
+    "seconds": 8.0,
+    "channels": 2,
+    "sha256": "a3dc94878b545370e30ed37914caaa068d616455bcddf7e6d0c1dc2e5c020f65"
+  },
+  {
+    "file": "verdant_ruin_charge.ogg",
+    "seconds": 31.0,
+    "channels": 2,
+    "sha256": "fb2bd1cef01510c11d8d315b8b6e256e5b914b2aef1b4e596fe6dc2b799f77d5"
+  },
+  {
+    "file": "verdant_ruin_impact.ogg",
+    "seconds": 8.0,
+    "channels": 2,
+    "sha256": "3177e2f32f864750e932da41521ea618c5eca7f8b8fe04997c8a60b58d1f96b1"
+  },
+  {
+    "file": "obsidian_cathedral_charge.ogg",
+    "seconds": 33.0,
+    "channels": 2,
+    "sha256": "7f6a13bf05ccb8ca28684b803d7125cc5a46e28afbad39e24fbfd4c0c6827242"
+  },
+  {
+    "file": "obsidian_cathedral_impact.ogg",
+    "seconds": 8.0,
+    "channels": 2,
+    "sha256": "8ba8710d87cd859bda3c2562d1ded0532ec3a7a8359406e687c0179534f525a8"
+  },
+  {
+    "file": "abyssal_deluge_charge.ogg",
+    "seconds": 35.0,
+    "channels": 2,
+    "sha256": "98d27db0df00c463fd1d8dea2c99b7cabc06bad6687f03b7515a35e6955d17ad"
+  },
+  {
+    "file": "abyssal_deluge_impact.ogg",
+    "seconds": 8.0,
+    "channels": 2,
+    "sha256": "d3cecef06534e4db9bd1161f8b9b50b87425a46d6fd5b7f982ff3ed89026802e"
+  },
+  {
+    "file": "world_sunder_charge.ogg",
+    "seconds": 37.0,
+    "channels": 2,
+    "sha256": "e5bae2f26f68aad815a16ef8d35c74ac35aab011a3c7ec6030f8b14e854bf169"
+  },
+  {
+    "file": "world_sunder_impact.ogg",
+    "seconds": 8.0,
+    "channels": 2,
+    "sha256": "89815cf0d692336bc1d371e699b91787e85976e0c2c28ed4bb14e6b08312d0ce"
+  },
+  {
+    "file": "rune_apocalypse_charge.ogg",
+    "seconds": 40.0,
+    "channels": 2,
+    "sha256": "90438f8f24d82b89d8395e4b3f7917748beebcf960fb79cdae3b874ddc7e4c43"
+  },
+  {
+    "file": "rune_apocalypse_impact.ogg",
+    "seconds": 8.0,
+    "channels": 2,
+    "sha256": "7031344c0b458c41d0960f9783803bd6b1331699e3f3fabbae2c4bc222099543"
+  }
+]

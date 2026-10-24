@@ -20,6 +20,7 @@ public final class ClientSetup {
     @SubscribeEvent public static void shaders(RegisterShadersEvent e)throws IOException{
         e.registerShader(new ShaderInstance(e.getResourceProvider(),Cataclysm.id("end_scene"),DefaultVertexFormat.POSITION_TEX_COLOR),s->EndCinematic.shader=s);
         e.registerShader(new ShaderInstance(e.getResourceProvider(),Cataclysm.id("invocation"),DefaultVertexFormat.POSITION_TEX_COLOR),s->ScreenFX.invocation=s);
+        e.registerShader(new ShaderInstance(e.getResourceProvider(),Cataclysm.id("saga"),DefaultVertexFormat.POSITION_TEX_COLOR),s->ScreenFX.saga=s);
         e.registerShader(new ShaderInstance(e.getResourceProvider(),Cataclysm.id("ac_post"),DefaultVertexFormat.POSITION_TEX_COLOR),s->ScreenFX.shader=s);
         e.registerShader(new ShaderInstance(e.getResourceProvider(),Cataclysm.id("ac_glow"),DefaultVertexFormat.POSITION_TEX_COLOR),s->FxMesh.glow=s);
         e.registerShader(new ShaderInstance(e.getResourceProvider(),Cataclysm.id("ac_rune"),DefaultVertexFormat.POSITION_TEX_COLOR),s->FxMesh.rune=s);

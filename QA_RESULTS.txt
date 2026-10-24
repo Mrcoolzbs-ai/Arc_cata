@@ -1,8 +1,7 @@
-Arcane Cataclysm 0.5.1-style-preview — fresh QA markers
+Arcane Cataclysm 0.6.0-cinematic-preview — fresh checks
 
-
-arc-style-final
-STYLE_CLIENT_READY renderer=LWJGL version 3.3.3+5
+initial-client-all15
+STYLE_CLIENT_READY gui=480x270 renderer=LWJGL version 3.3.3+5
 STYLE_PREVIEW_PERMISSION_SCOPE_PASS
 STYLE_COMMAND_PACKET_PASS spell=heavens_lance
 STYLE_SCENE_PASS spell=heavens_lance frames=16
@@ -14,39 +13,77 @@ STYLE_COMMAND_PACKET_PASS spell=tempest_wrath
 STYLE_SCENE_PASS spell=tempest_wrath frames=16
 STYLE_COMMAND_PACKET_PASS spell=starfall
 STYLE_SCENE_PASS spell=starfall frames=16
-STYLE_ALL_PASS (staged client visuals, first five only; no destructive-server claims)
+STYLE_COMMAND_PACKET_PASS spell=tectonic_rift
+STYLE_SCENE_PASS spell=tectonic_rift frames=16
+STYLE_COMMAND_PACKET_PASS spell=inferno_tide
+STYLE_SCENE_PASS spell=inferno_tide frames=16
+STYLE_COMMAND_PACKET_PASS spell=singularity
+STYLE_SCENE_PASS spell=singularity frames=16
+STYLE_COMMAND_PACKET_PASS spell=solar_nova
+STYLE_SCENE_PASS spell=solar_nova frames=16
+STYLE_COMMAND_PACKET_PASS spell=last_cataclysm
+STYLE_SCENE_PASS spell=last_cataclysm frames=16
+STYLE_COMMAND_PACKET_PASS spell=verdant_ruin
+STYLE_SCENE_PASS spell=verdant_ruin frames=16
+STYLE_COMMAND_PACKET_PASS spell=obsidian_cathedral
+STYLE_SCENE_PASS spell=obsidian_cathedral frames=16
+STYLE_COMMAND_PACKET_PASS spell=abyssal_deluge
+STYLE_SCENE_PASS spell=abyssal_deluge frames=16
+STYLE_COMMAND_PACKET_PASS spell=world_sunder
+STYLE_SCENE_PASS spell=world_sunder frames=16
+STYLE_COMMAND_PACKET_PASS spell=rune_apocalypse
+STYLE_SCENE_PASS spell=rune_apocalypse frames=16
+STYLE_ALL_PASS (staged client visuals, all fifteen ordinary spells; no destructive-server claims)
+BUILD SUCCESSFUL in 10m 14s
 
-arc-impact-movie
-STYLE_CLIENT_READY renderer=LWJGL version 3.3.3+5
-STYLE_SCENE_PASS spell=heavens_lance frames=48
-STYLE_SCENE_PASS spell=thousand_blades frames=48
-STYLE_SCENE_PASS spell=snow_grave frames=48
-STYLE_SCENE_PASS spell=tempest_wrath frames=48
-STYLE_SCENE_PASS spell=starfall frames=48
-STYLE_ALL_PASS (staged client visuals, first five only; no destructive-server claims)
+final-client-changed-range
+STYLE_CLIENT_READY gui=480x270 renderer=LWJGL version 3.3.3+5
+STYLE_COMMAND_PACKET_PASS spell=tempest_wrath
+STYLE_SCENE_PASS spell=tempest_wrath frames=18
+STYLE_COMMAND_PACKET_PASS spell=starfall
+STYLE_SCENE_PASS spell=starfall frames=18
+STYLE_COMMAND_PACKET_PASS spell=tectonic_rift
+STYLE_SCENE_PASS spell=tectonic_rift frames=18
+STYLE_COMMAND_PACKET_PASS spell=inferno_tide
+STYLE_SCENE_PASS spell=inferno_tide frames=18
+STYLE_COMMAND_PACKET_PASS spell=singularity
+STYLE_SCENE_PASS spell=singularity frames=18
+STYLE_COMMAND_PACKET_PASS spell=solar_nova
+STYLE_SCENE_PASS spell=solar_nova frames=18
+STYLE_COMMAND_PACKET_PASS spell=last_cataclysm
+STYLE_SCENE_PASS spell=last_cataclysm frames=18
+STYLE_COMMAND_PACKET_PASS spell=verdant_ruin
+STYLE_SCENE_PASS spell=verdant_ruin frames=18
+STYLE_COMMAND_PACKET_PASS spell=obsidian_cathedral
+STYLE_SCENE_PASS spell=obsidian_cathedral frames=18
+STYLE_COMMAND_PACKET_PASS spell=abyssal_deluge
+STYLE_SCENE_PASS spell=abyssal_deluge frames=18
+STYLE_COMMAND_PACKET_PASS spell=world_sunder
+STYLE_SCENE_PASS spell=world_sunder frames=18
+STYLE_COMMAND_PACKET_PASS spell=rune_apocalypse
+STYLE_SCENE_PASS spell=rune_apocalypse frames=18
+STYLE_ALL_PASS (staged client visuals, all fifteen ordinary spells; no destructive-server claims)
+BUILD SUCCESSFUL in 6m 2s
 
-arc-pure
+compact-320x240
+STYLE_CLIENT_READY gui=320x240 renderer=LWJGL version 3.3.3+5
+STYLE_SCENE_PASS spell=rune_apocalypse frames=18
+STYLE_ALL_PASS (staged client visuals, all fifteen ordinary spells; no destructive-server claims)
+BUILD SUCCESSFUL in 1m 9s
+
+dedicated-pure-regression
 AC4_PATCH_PASS geometryColumns=326717 replacementStates=5676710
 AC4_SCHEDULE_CODEC_PASS players=1..240 waves=9,17,21,25,29,42 duration=45
 AC4_PURE_ALL_PASS (no live-server or multiplayer claims)
 AC4_BOOTSTRAP_EXIT_NO_WORLD
+BUILD SUCCESSFUL in 16s
 
-arc-dynamics
-tier=1 power=0.944 initialShake=0.944
-tier=2 power=1.240 initialShake=1.240
-tier=3 power=1.536 initialShake=1.536
-tier=4 power=1.832 initialShake=1.832
-tier=5 power=2.104 initialShake=2.104
+Standalone contracts
 IMPACT_DYNAMICS_PASS checks=58881
-VISUAL_CONTRACT_PASS horizontal_seal_call_sites=10 halo=XZ camera_roll=0 toggles=verified
-
-arc-compact-final
-STYLE_CLIENT_READY gui=320x240 renderer=LWJGL version 3.3.3+5
-STYLE_SCENE_PASS spell=heavens_lance frames=16
-STYLE_ALL_PASS (staged client visuals, first five only; no destructive-server claims)
-
-RELEASE_JAR_PASS version=0.5.1-style-preview QA_CLASSES=0 JSON=valid classes=present
-RELEASE_CLEAN_BUILD_PASS (without QA flags)
-CORE_UNCHANGED_PASS files=8
-RESOURCE_JSON_PASS
-JAR_SHA256 b00a09d921bfd590a197b913eb6323753cfd3a5a20a78100f6e104fed6e4e59b
+VISUAL_CONTRACT_PASS horizontal_seal_call_sites=10
+CINEMATIC_CONTRACT_PASS scenes=15 epic=6 chapters=30 stereo_cues=30 preview=private no_caster_tethers=true
+PROTECTED_CONTENT_PASS original catalogue/destruction/End of All sources and assets unchanged
+AUDIO_QA_PASS tracks=30 stereo/duration/decoded loudness/true peak checked; see docs/AUDIO_QA_0.6.json
+PREVIEW_PASS compile/audio playback/desktop/narrow/no horizontal overflow
+RELEASE_CLEAN_BUILD_PASS no QA classes; JSON valid; all 30 audio hashes match
+JAR_SHA256 506cdb62281980b11e39efad47df881403a9696e129479f5a8d1cffcaa33f24e

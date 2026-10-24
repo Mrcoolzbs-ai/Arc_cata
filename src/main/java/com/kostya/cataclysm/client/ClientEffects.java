@@ -38,6 +38,7 @@ public final class ClientEffects {
         if(mc().level==null||packet.spell()<0||packet.spell()>=Spell.values().length||!Float.isFinite(packet.scale())||packet.scale()<=0||packet.scale()>1.5)return;
         if(ACTIVE.size()>=12){var old=ACTIVE.removeFirst();if(old.chargeSound!=null)mc().getSoundManager().stop(old.chargeSound);}
         var fx=new Fx(packet);ACTIVE.add(fx);
+        if(mc().player!=null&&packet.caster()==mc().player.getId())mc().getMusicManager().stopPlaying();
         fx.chargeSound=new SimpleSoundInstance(Cataclysm.id(fx.spell.id+"_charge"),SoundSource.PLAYERS,.55f,1f,RandomSource.create(),false,0,SoundInstance.Attenuation.NONE,0,0,0,true);
         mc().getSoundManager().play(fx.chargeSound);
     }

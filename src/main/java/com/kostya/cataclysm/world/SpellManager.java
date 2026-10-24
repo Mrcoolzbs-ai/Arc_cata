@@ -97,7 +97,7 @@ public final class SpellManager {
     }
     /** Private visual rehearsal. No Active/EndEvent, inventory, cooldown, damage or terrain job is created. */
     private static int preview(CommandSourceStack source,Spell spell)throws com.mojang.brigadier.exceptions.CommandSyntaxException{
-        if(spell.ordinal()>=5){source.sendFailure(Component.translatable("command.arcane_cataclysm.preview_scope"));return 0;}
+        if(spell.ordinal()>=15){source.sendFailure(Component.translatable("command.arcane_cataclysm.preview_scope"));return 0;}
         var p=source.getPlayerOrException();Vec3 eye=p.getEyePosition(),dir=p.getLookAngle();double reach=0;
         for(int d=1;d<=80;d++){
             Vec3 q=eye.add(dir.scale(d));
@@ -125,7 +125,7 @@ public final class SpellManager {
     }
     public static void commands(RegisterCommandsEvent e){
         e.getDispatcher().register(Commands.literal("cataclysm").requires(s->s.hasPermission(2))
-            .then(Commands.literal("preview").then(Commands.argument("spell",StringArgumentType.word()).suggests((c,b)->{for(int i=0;i<5;i++)b.suggest(Spell.values()[i].id);return b.buildFuture();}).executes(c->{
+            .then(Commands.literal("preview").then(Commands.argument("spell",StringArgumentType.word()).suggests((c,b)->{for(int i=0;i<15;i++)b.suggest(Spell.values()[i].id);return b.buildFuture();}).executes(c->{
                 try{return preview(c.getSource(),Spell.byId(StringArgumentType.getString(c,"spell")));}catch(IllegalArgumentException ex){c.getSource().sendFailure(Component.literal(ex.getMessage()));return 0;}
             })))
             .then(Commands.literal("endofall")

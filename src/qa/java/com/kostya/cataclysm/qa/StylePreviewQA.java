@@ -20,13 +20,13 @@ import java.nio.file.*;
 @EventBusSubscriber(modid=Cataclysm.MODID,value=Dist.CLIENT)
 public final class StylePreviewQA {
  static int ticks,scene=-1,frame,hold,globalFrame;static boolean requested,configured;static volatile boolean positioned;
- static final float[] SHOTS={24,76,-.62f,-.84f,10000-2,10000,10000+2,10000+5,10000+8,10000+14,10000+26,10000+55,10000+100,20000,30000,40000};
+ static final float[] SHOTS={24,76,-.18f,-.40f,-.62f,-.84f,10000-2,10000,10000+2,10000+5,10000+8,10000+14,10000+26,10000+55,10000+100,20000,30000,40000};
  static boolean enabled(){return Boolean.getBoolean("ac.styleqa");}
  static void require(boolean test,String msg){if(!test)throw new AssertionError(msg);}
  @SubscribeEvent public static void tick(ClientTickEvent.Post e){
   if(!enabled())return;var m=Minecraft.getInstance();ticks++;m.options.pauseOnLostFocus=false;
   if(!requested&&ticks>40&&m.getOverlay()==null){
-   requested=true;m.options.renderDistance().set(4);m.options.simulationDistance().set(5);m.options.guiScale().set(Boolean.getBoolean("ac.stylecompact")?3:2);m.options.fov().set(70);m.options.bobView().set(false);m.options.framerateLimit().set(60);m.resizeDisplay();
+   requested=true;m.getTutorial().setStep(net.minecraft.client.tutorial.TutorialSteps.NONE);m.getToasts().clear();m.options.renderDistance().set(4);m.options.simulationDistance().set(5);m.options.guiScale().set(Boolean.getBoolean("ac.stylecompact")?3:2);m.options.fov().set(70);m.options.bobView().set(false);m.options.framerateLimit().set(60);m.resizeDisplay();
    var rules=new GameRules();rules.getRule(GameRules.RULE_SPAWN_CHUNK_RADIUS).set(0,null);rules.getRule(GameRules.RULE_DOMOBSPAWNING).set(false,null);rules.getRule(GameRules.RULE_DAYLIGHT).set(false,null);
    m.createWorldOpenFlows().createFreshLevel("StyleDisposable-"+System.currentTimeMillis(),new LevelSettings("Style review / no terrain edits",GameType.CREATIVE,false,Difficulty.PEACEFUL,true,rules,WorldDataConfiguration.DEFAULT),new WorldOptions(5042,false,false),r->r.registryOrThrow(Registries.WORLD_PRESET).getHolderOrThrow(WorldPresets.FLAT).value().createWorldDimensions(),m.screen);
   }
@@ -38,9 +38,9 @@ public final class StylePreviewQA {
   });ticks=0;}
   if(m.screen!=null)m.setScreen(null);
   if(positioned&&scene<0&&ticks>80){
-   require(ScreenFX.invocation!=null,"invocation shader not loaded");
+   require(ScreenFX.invocation!=null&&ScreenFX.saga!=null,"cinematic shaders not loaded");
    ClientOptions.CAMERA.set(true);ClientOptions.POST.set(true);ClientOptions.ASTRAL.set(true);ClientOptions.FLASH.set(true);ClientOptions.SHAKE.set(true);ClientOptions.GLITCH.set(true);
-   scene=Integer.getInteger("ac.styleonly",0);globalFrame=scene*144;start();
+   scene=Integer.getInteger("ac.styleonly",Integer.getInteger("ac.stylefrom",0));require(scene>=0&&scene<15,"invalid fixture start");globalFrame=scene*144;start();
    if(Boolean.getBoolean("ac.stylecompact"))require(m.getWindow().getGuiScaledWidth()==320&&m.getWindow().getGuiScaledHeight()==240,"compact fixture dimensions");
    System.out.println("STYLE_CLIENT_READY gui="+m.getWindow().getGuiScaledWidth()+"x"+m.getWindow().getGuiScaledHeight()+" renderer="+com.mojang.blaze3d.systems.RenderSystem.getBackendDescription());
   }
@@ -58,7 +58,7 @@ public final class StylePreviewQA {
       boolean denied=false;
       try{server.getCommands().getDispatcher().execute("cataclysm preview heavens_lance",player.createCommandSourceStack().withPermission(1));}catch(com.mojang.brigadier.exceptions.CommandSyntaxException expected){denied=true;}
       require(denied,"non-operator preview was accepted");
-      require(server.getCommands().getDispatcher().execute("cataclysm preview tectonic_rift",player.createCommandSourceStack())==0,"preview scope exceeded first five");
+      require(server.getCommands().getDispatcher().execute("cataclysm preview end_of_all",player.createCommandSourceStack())==0,"preview scope admitted End of All");
       System.out.println("STYLE_PREVIEW_PERMISSION_SCOPE_PASS");
      }
      int result=server.getCommands().getDispatcher().execute("cataclysm preview "+Spell.values()[current].id,player.createCommandSourceStack());
@@ -82,7 +82,7 @@ public final class StylePreviewQA {
   return shot>=0?(int)shot:(int)(-shot*spell.impact);
  }
  @SubscribeEvent public static void before(RenderFrameEvent.Pre e){
-  if(!enabled()||scene<0||scene>=5||ClientEffects.ACTIVE.isEmpty())return;
+  if(!enabled()||scene<0||scene>=15||ClientEffects.ACTIVE.isEmpty())return;
   ClientEffects.ACTIVE.getLast().age=age();
   if(!Boolean.getBoolean("ac.stylemovie")){
    float shot=SHOTS[frame];
@@ -91,7 +91,7 @@ public final class StylePreviewQA {
   }
  }
  @SubscribeEvent public static void after(RenderFrameEvent.Post e){
-  if(!enabled()||scene<0||scene>=5||ClientEffects.ACTIVE.isEmpty())return;
+  if(!enabled()||scene<0||scene>=15||ClientEffects.ACTIVE.isEmpty())return;
   var m=Minecraft.getInstance();if(m.level==null||m.screen!=null||m.getOverlay()!=null)return;
   boolean movie=Boolean.getBoolean("ac.stylemovie");if(!movie&&++hold<3)return;hold=0;
   try{
@@ -101,14 +101,14 @@ public final class StylePreviewQA {
    frame++;
    if(frame==(movie?(Boolean.getBoolean("ac.styleimpactmovie")?48:144):SHOTS.length)){
     System.out.println("STYLE_SCENE_PASS spell="+Spell.values()[scene].id+" frames="+frame);scene++;
-    if(scene<5&&!Boolean.getBoolean("ac.styleonly.enabled"))start();else{
+    if(scene<15&&!Boolean.getBoolean("ac.styleonly.enabled"))start();else{
      var f=ClientEffects.ACTIVE.getLast();
      ClientOptions.FLASH.set(true);ClientOptions.GLITCH.set(true);ClientOptions.SHAKE.set(true);
-     require(InvocationDirector.supports(Spell.STARFALL)&&!InvocationDirector.supports(Spell.TECTONIC_RIFT)&&!InvocationDirector.supports(Spell.END_OF_ALL),"scope");
+     require(InvocationDirector.supports(Spell.STARFALL)&&InvocationDirector.supports(Spell.TECTONIC_RIFT)&&InvocationDirector.supports(Spell.RUNE_APOCALYPSE)&&!InvocationDirector.supports(Spell.END_OF_ALL),"scope");
      ClientOptions.ASTRAL.set(false);require(InvocationDirector.theatre(f,150)==0,"astral opt-out ignored");ClientOptions.ASTRAL.set(true);
      ClientOptions.CAMERA.set(false);require(ClientEffects.cinematic()==null,"camera opt-out ignored");ClientOptions.CAMERA.set(true);
      f.skipped=true;require(ClientEffects.cinematic()==null,"skip ignored");
-     System.out.println("STYLE_ALL_PASS (staged client visuals, first five only; no destructive-server claims)");m.stop();
+     System.out.println("STYLE_ALL_PASS (staged client visuals, all fifteen ordinary spells; no destructive-server claims)");m.stop();
     }
    }
   }catch(Throwable ex){ex.printStackTrace();Runtime.getRuntime().halt(1);}
