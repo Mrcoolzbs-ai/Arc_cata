@@ -3,8 +3,8 @@ from pathlib import Path
 import json,re,subprocess,hashlib
 P=Path(__file__).resolve().parents[2];J=P/'src/main/java/com/kostya/cataclysm';R=P/'src/main/resources/assets/arcane_cataclysm'
 director=(J/'client/InvocationDirector.java').read_text()
-assert 'spell.ordinal()<15' in director and 'spell.ordinal()>=9' in director
-assert 'f.spell.impact+50' in director
+assert 'spell.ordinal()<9' in director
+assert 'out=f.spell.impact-48' in director
 manager=(J/'world/SpellManager.java').read_text()
 assert 'spell.ordinal()>=15' in manager and 'for(int i=0;i<15;i++)' in manager
 preview=manager[manager.index('private static int preview'):manager.index('private static int endOfAllSetting')]
@@ -12,7 +12,7 @@ assert 'PacketDistributor.sendToPlayer(p,' in preview
 assert not any(token in preview for token in ['ACTIVE.add','EndEvent.start','DestructionEngine.prepare','impact(a','addCooldown'])
 first=(J/'client/FirstFiveRenderer.java').read_text()
 assert 'origin.lerp' not in first and 'threads are drawn' not in first
-for path in [J/'client/FirstFiveRenderer.java',J/'client/SecondFourRenderer.java',J/'client/SpellRenderer.java',J/'client/RitualRenderer.java']:
+for path in [J/'client/FirstFiveRenderer.java',J/'client/SecondFourRenderer.java',J/'client/SpellRenderer.java',J/'client/RitualRenderer.java',J/'client/HighTierWorldRenderer.java']:
  for line in path.read_text().splitlines():
   if 'FxMesh.ribbon(' in line or 'FxMesh.beam(' in line:
    assert not ('packet.origin' in line or 'origin.lerp' in line), (path,line)

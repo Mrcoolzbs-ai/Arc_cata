@@ -30,7 +30,7 @@ public final class Cataclysm {
     public static final DeferredHolder<SoundEvent,SoundEvent> CHARGE=SOUNDS.register("charge",()->SoundEvent.createVariableRangeEvent(id("charge")));
     public static final DeferredHolder<SoundEvent,SoundEvent> IMPACT=SOUNDS.register("impact",()->SoundEvent.createVariableRangeEvent(id("impact")));
     public static final DeferredHolder<SoundEvent,SoundEvent> RUMBLE=SOUNDS.register("rumble",()->SoundEvent.createVariableRangeEvent(id("rumble")));
-    static {for(Spell spell:Spell.values())for(String phase:new String[]{"charge","impact"}){String name=spell.id+"_"+phase;SOUNDS.register(name,()->SoundEvent.createVariableRangeEvent(id(name)));}}
+    static {for(Spell spell:Spell.values())for(String phase:(spell.ordinal()>=9&&spell.ordinal()<15?new String[]{"charge","impact","score"}:new String[]{"charge","impact"})){String name=spell.id+"_"+phase;SOUNDS.register(name,()->SoundEvent.createVariableRangeEvent(id(name)));}}
     public static ResourceLocation id(String path){return ResourceLocation.fromNamespaceAndPath(MODID,path);}
     public Cataclysm(IEventBus bus,ModContainer container){
         ITEMS.register(bus);COMPONENTS.register(bus);TABS.register(bus);SOUNDS.register(bus);

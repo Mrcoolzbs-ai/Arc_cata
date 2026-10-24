@@ -22,7 +22,7 @@ public final class V4PureQA {
     int x=(int)Math.floor(plan.center.x+(rng.nextDouble()*2-1)*plan.radius),z=(int)Math.floor(plan.center.z+(rng.nextDouble()*2-1)*plan.radius);
     var c=plan.column(x,z,terrain,-64,320);if(c==null)continue;
     require(c.bottom()>=-64&&c.top()<320&&c.bottom()<=c.top(),"column bounds "+spell);
-    if(spell==Spell.THOUSAND_BLADES||spell==Spell.TEMPEST_WRATH||spell==Spell.INFERNO_TIDE){require(c.spike()==0,"unwanted structure");for(int y=c.bottom();y<=c.top();y++)require(plan.state(c,x,y,z,Blocks.AIR.defaultBlockState()).isAir(),"unwanted fill "+spell);}
+    if(spell==Spell.THOUSAND_BLADES||spell==Spell.TEMPEST_WRATH||spell==Spell.INFERNO_TIDE||spell==Spell.VERDANT_RUIN){require(c.spike()==0,"unwanted structure");for(int y=c.bottom();y<=c.top();y++)require(plan.state(c,x,y,z,Blocks.AIR.defaultBlockState()).isAir(),"unwanted fill "+spell);}
     checks++;
    }
    var samples=new PreparedChunk.Sample[256];BlockState[][] originals=new BlockState[256][];
@@ -46,6 +46,19 @@ public final class V4PureQA {
    }
    require(actual==patch.changes,"changed count");changes+=actual;
   }
+  long waterChecks=0;
+  for(double sy:new double[]{-60,0,60,200})for(double scale:new double[]{.1,1.,1.5})for(int min:new int[]{-64,-128,16}){
+   var plan=new DestructionPlan(Spell.ABYSSAL_DELUGE,new Vec3(-.5,sy,-.5),new Vec3(0,0,1),42,scale);
+   var c=plan.column(-1,-1,(int)sy,min,320);
+   for(int y=c.floor()+1;y<=c.top();y++){
+    var state=plan.state(c,-1,y,-1,Blocks.AIR.defaultBlockState());
+    if(y<=0)require(state.is(Blocks.WATER),"deluge missing water at y="+y+" target="+sy);
+    else require(state.isAir(),"deluge filled above y=0 at "+y);
+    waterChecks++;
+   }
+   if(c.floor()<0&&min<=0)require(c.top()>=0,"deluge snapshot misses sea surface");
+  }
+  System.out.println("AC061_WATER_PASS y=0-inclusive states="+waterChecks+" targets=-60,0,60,200 minY=-128,-64,16 scales=.1,1,1.5");
   System.out.println("AC4_PATCH_PASS geometryColumns="+checks+" replacementStates="+changes);
   for(int n=1;n<=240;n++){
    var ids=new ArrayList<UUID>();for(int i=0;i<n;i++)ids.add(new UUID(n,i));UUID caster=ids.get(n-1);

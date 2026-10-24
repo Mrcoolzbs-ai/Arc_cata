@@ -18,15 +18,20 @@ public final class SecondFourRenderer {
         FxMesh.disk(f.packet.origin().add(0,.06,0),3.0,0);FxMesh.disk(p.add(0,.16,0),Math.min(f.radius()*.7,95*s)*grow,0);FxMesh.end();
         switch(f.spell){
             case TECTONIC_RIFT->{
-                solid(f,t,hold,0x6e645f,6);
-                for(int k=-7;k<=7;k++)for(int side=-1;side<=1;side+=2){
-                    double x=side*(9+release*18)*s,y=(10+Math.sin(k*2.7)*8)*s*grow;
-                    FxMesh.box(p.add(x,y,k*11*s),8*s,(12+Math.abs(k%3)*8)*s*grow,5*s);
-                    FxMesh.crystal(p.add(x,y+12*s,k*11*s),14*s*grow,5*s,k*.3);
+                // Low grounded plates follow the actual packet fault direction; no floating crystals.
+                Vec3 forward=f.packet.direction().multiply(1,0,1).normalize();if(forward.lengthSqr()<.1)forward=new Vec3(1,0,0);
+                Vec3 across=new Vec3(-forward.z,0,forward.x);
+                solid(f,t,hold,0x6e645f,7);
+                for(int k=-8;k<=8;k++)for(int side=-1;side<=1;side+=2){
+                    Vec3 q=p.add(forward.scale(k*10*s)).add(across.scale((side*(9+release*14)+Math.sin(k*.9)*2)*s));
+                    faultPlate(q,forward,across,(4.3+.4*Math.sin(k*2.1))*s,(5.5+Math.abs(Math.sin(k*3.1))*1.5)*s,
+                        (2+grow*(5+Math.sin(k*3.7)*2))*s,(.3+grow*.8)*s,-3*s,side);
                 }FxMesh.end();
-                light(f,t,hold*.8f);for(int k=-12;k<12;k++){
-                    Vec3 a=p.add(Math.sin(k*1.7)*4*s,.6,k*7*s),b=p.add(Math.sin((k+1)*1.7)*4*s,.6,(k+1)*7*s);
-                    FxMesh.ribbon(a,b,(.5+release*2)*s);
+                light(f,t,hold*.65f);
+                for(int k=-13;k<13;k++){
+                    Vec3 a=p.add(forward.scale(k*7*s)).add(across.scale(Math.sin(k*1.7)*2*s)).add(0,.25,0);
+                    Vec3 b=p.add(forward.scale((k+1)*7*s)).add(across.scale(Math.sin((k+1)*1.7)*2*s)).add(0,.25,0);
+                    FxMesh.ribbon(a,b,(.2+release*.6)*s);
                 }FxMesh.end();
             }
             case INFERNO_TIDE->{
@@ -49,11 +54,8 @@ public final class SecondFourRenderer {
             }
             case SOLAR_NOVA->{
                 Vec3 center=p.add(0,58*s,0);double radius=(5+grow*28)*(1-release*.12)*s;
-                FxMesh.begin(FxMesh.energy,t,0xffcf72,0xff391a,hold,0,.8f,6,0,false);FxMesh.sphere(center,radius,40,24);FxMesh.end();
-                light(f,t,hold*.8f);for(int k=0;k<10;k++){
-                    double a=k*TAU/10+t*.08;Vec3 v=new Vec3(Math.cos(a),Math.sin(a),.2*Math.sin(a*3));Vec3 last=center.add(v.scale(radius));
-                    for(int q=1;q<=20;q++){double u=q/20.,arc=Math.sin(u*Math.PI);Vec3 next=center.add(v.scale(radius+arc*(16+release*35)*s)).add(0,0,(u-.5)*radius*1.3);FxMesh.ribbon(last,next,.45*s);last=next;}
-                }FxMesh.end();
+                FxMesh.begin(FxMesh.surface,t,0xffcf72,0xff391a,hold,0,.8f,6,0,true);FxMesh.sphere(center,radius,40,24);FxMesh.end();
+
             }
             default->{}
         }
@@ -62,6 +64,16 @@ public final class SecondFourRenderer {
             FxMesh.begin(FxMesh.glow,t,f.spell.color,f.spell.secondary,fade*(float)(1-u),1,.8f,.018f,0,false);
             FxMesh.disk(p.add(0,1+k*2,0),Math.max(.1,f.radius()*u),0);FxMesh.end();
         }
+    }
+    /** A grounded tilted rock wedge, not a floating box or a continuous flat plank. */
+    private static void faultPlate(Vec3 p,Vec3 forward,Vec3 across,double length,double width,double inner,double outer,double bottom,int side){
+        Vec3 along=forward.scale(length),cross=across.scale(width*side);
+        Vec3 a=p.subtract(along).subtract(cross).add(0,inner,0),b=p.add(along).subtract(cross).add(0,inner,0);
+        Vec3 c=p.add(along).add(cross).add(0,outer,0),d=p.subtract(along).add(cross).add(0,outer,0);
+        Vec3 aa=new Vec3(a.x,p.y+bottom,a.z),bb=new Vec3(b.x,p.y+bottom,b.z),cc=new Vec3(c.x,p.y+bottom,c.z),dd=new Vec3(d.x,p.y+bottom,d.z);
+        FxMesh.quad(a,b,c,d,b.subtract(a).cross(d.subtract(a)).normalize());
+        FxMesh.quad(aa,bb,b,a,across.scale(-side));FxMesh.quad(bb,cc,c,b,forward);
+        FxMesh.quad(cc,dd,d,c,across.scale(side));FxMesh.quad(dd,aa,a,d,forward.scale(-1));
     }
     private SecondFourRenderer(){}
 }

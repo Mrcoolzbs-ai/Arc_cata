@@ -1,0 +1,41 @@
+{
+  "baseline": "3d1a460",
+  "unchanged": [
+    {
+      "file": "src/main/java/com/kostya/cataclysm/client/EndCinematic.java",
+      "sha256": "ce1e9c795c844d198deea5b5941df96e27679367def2ee000914645d4522df52"
+    },
+    {
+      "file": "src/main/java/com/kostya/cataclysm/world/EndEvent.java",
+      "sha256": "e6f72ff63daec374a66c63ef6f6207974c7a8642306ea746a33e2ef5b105836f"
+    },
+    {
+      "file": "src/main/java/com/kostya/cataclysm/world/EndSchedule.java",
+      "sha256": "a502cbba50c434f62f0c8077fc9a924875828f9ba2ed9301e6c795c32e057046"
+    },
+    {
+      "file": "src/main/java/com/kostya/cataclysm/Spell.java",
+      "sha256": "d37a7fad3b94163ff811b1d3e50cb5585d8b59e0238e2cc4991b424e09f686d3"
+    },
+    {
+      "file": "src/main/java/com/kostya/cataclysm/network/SpellNetwork.java",
+      "sha256": "0573c3652d0050b740d2d3bdf67c74478f3cd9e73318764ee90634deea7405d8"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/shaders/core/end_scene.fsh",
+      "sha256": "98bc27eec3efb1e6e721c1d840443c7102484ac90c6847f19e5f3dc781e6d2cf"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/shaders/core/end_scene.json",
+      "sha256": "0c00c7dabd605cf20ffe88f6bab3965355659f62c289b440eff8087fc2f69fee"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/end_of_all_charge.ogg",
+      "sha256": "7eaa03bb4bd05d338d8b9b8bb0a98f6d8af939597bdecad048461a40d0a80f8e"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/end_of_all_impact.ogg",
+      "sha256": "796560651da9759103259614d54b115bc8cfae7a22c6d9465a1e5bf97b4d9712"
+    }
+  ]
+}

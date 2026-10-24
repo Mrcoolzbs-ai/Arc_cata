@@ -25,7 +25,7 @@ public final class FxMesh {
         shader.safeGetUniform("ColorModulator").set(1f,1f,1f,1f);
         RenderSystem.enableBlend();
         // Solid cores must occlude their back faces and the far half of orbit disks.
-        RenderSystem.depthMask(shader==voidEnergy||(shader==surface&&(x==0||x==6)));
+        RenderSystem.depthMask(shader==voidEnergy||(shader==surface&&(x==0||x==6||x==7||x==8)));
         // Core ShaderInstance in 1.21 does not apply JSON blend settings.
         // Explicit state: opaque plasma/void surfaces use alpha, glow meshes use additive.
         RenderSystem.blendFunc(GL11.GL_SRC_ALPHA,opaque?GL11.GL_ONE_MINUS_SRC_ALPHA:GL11.GL_ONE);

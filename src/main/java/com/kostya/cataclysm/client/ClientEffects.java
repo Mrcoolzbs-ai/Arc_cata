@@ -27,7 +27,7 @@ public final class ClientEffects {
 
     public static final class Fx {
         public final Spell spell;public final SpellNetwork.Fx packet;public final List<Vec3> strikes;
-        public SoundInstance chargeSound;public int age;public boolean skipped;int soundDelay=-1;
+        public SoundInstance chargeSound,scoreSound;public boolean scoreStarted;public int age;public boolean skipped;int soundDelay=-1;
         Fx(SpellNetwork.Fx packet){this.packet=packet;spell=Spell.byIndex(packet.spell());strikes=SpellPatterns.strikes(packet.target(),packet.seed(),spell.radius*packet.scale()*.86,spell==Spell.TEMPEST_WRATH?40:72);}
         public float age(float partial){return age+partial;}
         public double radius(){return spell.radius*packet.scale();}
@@ -36,9 +36,10 @@ public final class ClientEffects {
     private static Minecraft mc(){return Minecraft.getInstance();}
     public static void receive(SpellNetwork.Fx packet){
         if(mc().level==null||packet.spell()<0||packet.spell()>=Spell.values().length||!Float.isFinite(packet.scale())||packet.scale()<=0||packet.scale()>1.5)return;
-        if(ACTIVE.size()>=12){var old=ACTIVE.removeFirst();if(old.chargeSound!=null)mc().getSoundManager().stop(old.chargeSound);}
+        if(ACTIVE.size()>=12){var old=ACTIVE.removeFirst();SpellFilm.stop(old);if(old.chargeSound!=null)mc().getSoundManager().stop(old.chargeSound);}
         var fx=new Fx(packet);ACTIVE.add(fx);
         if(mc().player!=null&&packet.caster()==mc().player.getId())mc().getMusicManager().stopPlaying();
+        if(SpellFilm.eligible(fx)){SpellFilm.audio(fx);return;}
         fx.chargeSound=new SimpleSoundInstance(Cataclysm.id(fx.spell.id+"_charge"),SoundSource.PLAYERS,.55f,1f,RandomSource.create(),false,0,SoundInstance.Attenuation.NONE,0,0,0,true);
         mc().getSoundManager().play(fx.chargeSound);
     }
@@ -49,14 +50,14 @@ public final class ClientEffects {
             if(m.player!=null)m.player.displayClientMessage(Component.translatable(ClientOptions.CAMERA.get()?"message.arcane_cataclysm.camera_on":"message.arcane_cataclysm.camera_off"),true);
         }
         while(ClientSetup.SKIP.consumeClick())for(Fx f:ACTIVE)f.skipped=true;
-        if(m.level==null||m.player==null){if(savedClouds!=null){m.options.cloudStatus().set(savedClouds);savedClouds=null;}ACTIVE.clear();latestProgress=null;return;}
+        if(m.level==null||m.player==null){if(savedClouds!=null){m.options.cloudStatus().set(savedClouds);savedClouds=null;}for(Fx f:ACTIVE)SpellFilm.stop(f);ACTIVE.clear();latestProgress=null;return;}
         if(cinematic()!=null){if(savedClouds==null)savedClouds=m.options.cloudStatus().get();m.options.cloudStatus().set(CloudStatus.OFF);}else if(savedClouds!=null){m.options.cloudStatus().set(savedClouds);savedClouds=null;}
         if(m.isPaused())return;
         for(var it=ACTIVE.iterator();it.hasNext();){
-            Fx f=it.next();f.age++;
+            Fx f=it.next();f.age++;SpellFilm.audio(f);
             if(f.age==f.spell.impact){if(f.chargeSound!=null)m.getSoundManager().stop(f.chargeSound);f.soundDelay=(int)Math.min(40,m.player.position().distanceTo(f.packet.target())/17);}
-            if(f.soundDelay>=0 && f.soundDelay--==0){sound(f.spell.id+"_impact",.9f,1f);}
-            if(f.age>f.spell.duration){if(f.chargeSound!=null)m.getSoundManager().stop(f.chargeSound);it.remove();}
+            if(f.soundDelay>=0 && f.soundDelay--==0&&!SpellFilm.eligible(f)){sound(f.spell.id+"_impact",.9f,1f);}
+            if(f.age>f.spell.duration){SpellFilm.stop(f);if(f.chargeSound!=null)m.getSoundManager().stop(f.chargeSound);it.remove();}
         }
     }
     private static void sound(String id,float volume,float pitch){
@@ -64,7 +65,7 @@ public final class ClientEffects {
     }
     public static Fx cinematic(){
         if(!ClientOptions.CAMERA.get()||mc().player==null||mc().player.isSpectator())return null;
-        for(int i=ACTIVE.size()-1;i>=0;i--){Fx f=ACTIVE.get(i);if(!f.skipped&&f.packet.caster()==mc().player.getId())return f;}return null;
+        for(int i=ACTIVE.size()-1;i>=0;i--){Fx f=ACTIVE.get(i);if(!f.skipped&&(!SpellFilm.epic(f.spell)||(ClientOptions.ASTRAL.get()&&ClientOptions.POST.get()&&f.age<f.spell.impact+100))&&f.packet.caster()==mc().player.getId())return f;}return null;
     }
     public static float casting(int entity){for(Fx f:ACTIVE)if(f.packet.caster()==entity&&f.age<f.spell.impact)return Math.min(1,f.age/16f);return 0;}
     @SubscribeEvent public static void scroll(InputEvent.MouseScrollingEvent e){
@@ -76,10 +77,10 @@ public final class ClientEffects {
     @SubscribeEvent public static void movement(MovementInputUpdateEvent e){
         if(cinematic()!=null||EndCinematic.running()){var input=e.getInput();input.forwardImpulse=0;input.leftImpulse=0;input.jumping=false;input.up=false;input.down=false;input.left=false;input.right=false;}
     }
-    @SubscribeEvent public static void logout(ClientPlayerNetworkEvent.LoggingOut e){if(savedClouds!=null){mc().options.cloudStatus().set(savedClouds);savedClouds=null;}for(Fx f:ACTIVE)if(f.chargeSound!=null)mc().getSoundManager().stop(f.chargeSound);ACTIVE.clear();latestProgress=null;}
+    @SubscribeEvent public static void logout(ClientPlayerNetworkEvent.LoggingOut e){if(savedClouds!=null){mc().options.cloudStatus().set(savedClouds);savedClouds=null;}for(Fx f:ACTIVE){SpellFilm.stop(f);if(f.chargeSound!=null)mc().getSoundManager().stop(f.chargeSound);}ACTIVE.clear();latestProgress=null;}
     @SubscribeEvent public static void hand(RenderHandEvent e){if(cinematic()!=null||EndCinematic.running())e.setCanceled(true);}
     @SubscribeEvent public static void vanillaHud(RenderGuiLayerEvent.Pre e){
-        if(EndCinematic.running()){if(e.getName().getNamespace().equals("minecraft"))e.setCanceled(true);return;}
+        if(EndCinematic.running()||SpellFilm.running()){if(e.getName().getNamespace().equals("minecraft"))e.setCanceled(true);return;}
         if(cinematic()==null)return;
         if(InvocationDirector.supports(cinematic().spell)){
             if(e.getName().getNamespace().equals("minecraft"))e.setCanceled(true);
@@ -95,6 +96,7 @@ public final class ClientEffects {
         }return Math.min(amount,3.8);
     }
     public static View view(Camera camera,float partial){
+        if(SpellFilm.running())return null;
         Fx f=cinematic();double shake=shake(partial);double t=mc().level==null?0:mc().level.getGameTime()+partial;
         Vec3 base=camera.getPosition();float yaw=camera.getYRot(),pitch=camera.getXRot(),roll=camera.getRoll();
         if(f!=null){
@@ -124,14 +126,14 @@ public final class ClientEffects {
         return new View(base,yaw+(float)(Math.sin(t*2.3)*shake*.4),pitch+(float)(Math.cos(t*3.3)*shake*.3),roll+(float)(Math.sin(t*2)*shake*.55));
     }
     public static double smooth(double p){p=Math.max(0,Math.min(1,p));return p*p*(3-2*p);}
-    @SubscribeEvent public static void fov(ViewportEvent.ComputeFov e){var f=cinematic();if(f!=null)e.setFOV(e.getFOV()*(InvocationDirector.supports(f.spell)?InvocationDirector.fov(f,(float)e.getPartialTick()):((f.spell.cosmic()?.89:1.08)+.035*Math.sin(f.age*.012))));}
+    @SubscribeEvent public static void fov(ViewportEvent.ComputeFov e){var f=cinematic();if(f!=null&&!SpellFilm.running())e.setFOV(e.getFOV()*(InvocationDirector.supports(f.spell)?InvocationDirector.fov(f,(float)e.getPartialTick()):((f.spell.cosmic()?.89:1.08)+.035*Math.sin(f.age*.012))));}
     @SubscribeEvent public static void fog(ViewportEvent.ComputeFogColor e){
         if(ACTIVE.isEmpty())return;Fx f=ACTIVE.getLast();float mix=.10f*(float)Math.sin(Math.min(1,f.age/(double)f.spell.duration)*Math.PI);
         e.setRed(Mth.lerp(mix,e.getRed(),((f.spell.color>>16)&255)/255f));e.setGreen(Mth.lerp(mix,e.getGreen(),((f.spell.color>>8)&255)/255f));e.setBlue(Mth.lerp(mix,e.getBlue(),(f.spell.color&255)/255f));
     }
     public static boolean hudVisible(){var m=mc();return m.player!=null&&!m.player.isSpectator()&&!m.options.hideGui;}
     public static void hud(GuiGraphics g,DeltaTracker tracker){
-        Minecraft m=mc();if(!hudVisible())return;
+        Minecraft m=mc();if(!hudVisible()||SpellFilm.running())return;
         int w=g.guiWidth(),h=g.guiHeight();float partial=tracker.getGameTimeDeltaPartialTick(false);
         if(cinematic()==null&&(m.player.getMainHandItem().getItem() instanceof GrimoireItem||m.player.getOffhandItem().getItem() instanceof GrimoireItem)){
             var stack=m.player.getMainHandItem().getItem() instanceof GrimoireItem?m.player.getMainHandItem():m.player.getOffhandItem();Spell s=GrimoireItem.selected(stack);

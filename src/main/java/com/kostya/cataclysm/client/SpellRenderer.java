@@ -14,10 +14,15 @@ import java.util.Random;
 @EventBusSubscriber(modid=Cataclysm.MODID,value=Dist.CLIENT)
 public final class SpellRenderer {
     @SubscribeEvent public static void render(RenderLevelStageEvent e){
-        if(e.getStage()!=RenderLevelStageEvent.Stage.AFTER_PARTICLES||ClientEffects.ACTIVE.isEmpty()||FxMesh.glow==null||FxMesh.rune==null||FxMesh.energy==null||FxMesh.surface==null||FxMesh.voidEnergy==null)return;
+        if(SpellFilm.running()||EndCinematic.running()||e.getStage()!=RenderLevelStageEvent.Stage.AFTER_PARTICLES||ClientEffects.ACTIVE.isEmpty()||FxMesh.glow==null||FxMesh.rune==null||FxMesh.energy==null||FxMesh.surface==null||FxMesh.voidEnergy==null)return;
         float partial=e.getPartialTick().getGameTimeDeltaPartialTick(false);FxMesh.frame(e.getCamera());
+        // Stage matrices include camera yaw/pitch. RenderSystem's global matrix is not
+        // guaranteed to contain them in AFTER_PARTICLES (NeoForge 1.21).
+        var modelView=RenderSystem.getModelViewStack();modelView.pushMatrix();modelView.set(e.getModelViewMatrix());RenderSystem.applyModelViewMatrix();
+        RenderSystem.backupProjectionMatrix();RenderSystem.setProjectionMatrix(e.getProjectionMatrix(),com.mojang.blaze3d.vertex.VertexSorting.DISTANCE_TO_ORIGIN);
         RenderSystem.enableDepthTest();RenderSystem.depthMask(false);RenderSystem.disableCull();RenderSystem.setShaderColor(1,1,1,1);
         try{for(ClientEffects.Fx f:ClientEffects.ACTIVE)draw(f,partial);}finally{
+            RenderSystem.restoreProjectionMatrix();modelView.popMatrix();RenderSystem.applyModelViewMatrix();
             RenderSystem.depthMask(true);RenderSystem.enableCull();RenderSystem.defaultBlendFunc();RenderSystem.disableBlend();RenderSystem.setShaderColor(1,1,1,1);
         }
     }
@@ -27,6 +32,7 @@ public final class SpellRenderer {
         Vec3 p=f.packet.target();double s=f.packet.scale(),r=f.radius();int c=f.spell.color,c2=f.spell.secondary;
         if(f.spell.ordinal()<5){FirstFiveRenderer.draw(f,partial);return;}
         if(f.spell.ordinal()<9){SecondFourRenderer.draw(f,partial);return;}
+        if(SpellFilm.epic(f.spell)){HighTierWorldRenderer.draw(f,partial);return;}
         // Each invocation starts with rotating, procedurally inscribed seals, not static particle spam.
         if(after<55){
             float a=fade*(float)(after<0?1:Math.max(0,1-after/55));

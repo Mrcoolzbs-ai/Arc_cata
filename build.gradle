@@ -291,6 +291,7 @@ if (project.hasProperty('styleqa')) {
  sourceSets.main.java.srcDir('src/qa/java')
  neoForge.runs.client {
   systemProperty 'ac.styleqa', 'true'
+  if (project.hasProperty('styleworld')) systemProperty 'ac.styleworld', 'true'
   if (project.hasProperty('stylecommandqa')) systemProperty 'ac.stylecommandqa', 'true'
   if (project.hasProperty('stylemovie')) systemProperty 'ac.stylemovie', 'true'
   if (project.hasProperty('styleimpactmovie')) {
@@ -306,5 +307,14 @@ if (project.hasProperty('styleqa')) {
   gameDirectory = project.file('run-style')
   programArguments.addAll '--width','960','--height',(project.hasProperty('stylecompact')?'720':'540')
   jvmArguments.add('-Xmx1500M')
+ }
+}
+
+if (project.hasProperty('filmserverqa')) {
+ sourceSets.main.java.srcDir('src/qa/java')
+ neoForge.runs.server {
+  systemProperty 'ac.filmserverqa', 'true'
+  gameDirectory = project.file('run-filmserver')
+  jvmArguments.add('-Xmx1G')
  }
 }

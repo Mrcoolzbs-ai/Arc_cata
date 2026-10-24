@@ -393,10 +393,7 @@ void nova(){
  if(t>0.&&t<opaqueDepth){vec3 n=normalize(ro+rd*t-center);float f=acFbm(n*9.+vec3(0,tm*.2,0));
   col=mix(vec3(.65,.075,.004),vec3(2.3,1.3,.18),f)+vec3(1.5,.35,.015)*pow(1.-abs(dot(n,rd)),4.);opaqueDepth=t;
  }
- for(int k=0;k<8;k++){float a=float(k)*TAU/8.+tm*.04;vec3 v=vec3(cos(a),sin(a),0),side=vec3(-sin(a),cos(a),0),last=center+v*radius;
-  for(int q=1;q<=14;q++){float u=float(q)/14.;vec3 next=center+v*(radius+sin(u*PI)*(2.+release*6.))+side*sin(u*TAU)*1.2+vec3(0,0,(u-.5)*radius);
-   beam(last,next,.04,vec3(2.,.50,.025),.8*grow);last=next;}
- }
+ // The stellar atmosphere is volumetric/radial, never long projected ribbons.
  seal(vec3(0,1.,0),vec3(0,1,0),12.,-tm*.05,.35,0.);
 }
 vec3 theatre(vec2 uv,int id){

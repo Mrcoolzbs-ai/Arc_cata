@@ -312,5 +312,53 @@
         "stream": true
       }
     ]
+  },
+  "last_cataclysm_score": {
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:last_cataclysm_score",
+        "stream": true
+      }
+    ]
+  },
+  "verdant_ruin_score": {
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:verdant_ruin_score",
+        "stream": true
+      }
+    ]
+  },
+  "obsidian_cathedral_score": {
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:obsidian_cathedral_score",
+        "stream": true
+      }
+    ]
+  },
+  "abyssal_deluge_score": {
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:abyssal_deluge_score",
+        "stream": true
+      }
+    ]
+  },
+  "world_sunder_score": {
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:world_sunder_score",
+        "stream": true
+      }
+    ]
+  },
+  "rune_apocalypse_score": {
+    "sounds": [
+      {
+        "name": "arcane_cataclysm:rune_apocalypse_score",
+        "stream": true
+      }
+    ]
   }
 }

@@ -36,6 +36,7 @@ public final class DestructionEngine {
         public boolean released,done,cancelled;
         private final Map<Long,Integer> retries=new HashMap<>();private final Deque<ChunkPos> todo;private final Deque<Prepared> ready=new ArrayDeque<>();
         private final List<Loading> loading=new ArrayList<>();private Prepared current;private int cursor,pendingLights;
+        private Capture capture;
         private long lastNotice=-1000;
         private Handle(ServerLevel level,DestructionPlan plan,UUID owner){
             this.level=level;this.plan=plan;this.id=plan.seed;this.owner=owner;
@@ -49,6 +50,11 @@ public final class DestructionEngine {
             list.sort(Comparator.comparingDouble(p->Math.pow(p.x*16+8-plan.center.x,2)+Math.pow(p.z*16+8-plan.center.z,2)));
             todo=new ArrayDeque<>(list);total=list.size();
         }
+    }
+    /** Only the server reads chunks. Life snapshots yield between columns, retaining their ticket. */
+    private static final class Capture {
+        final LevelChunk chunk;final PreparedChunk.Sample[] samples=new PreparedChunk.Sample[256];int cursor;
+        Capture(LevelChunk chunk){this.chunk=chunk;}
     }
     private record Loading(ChunkPos pos,CompletableFuture<?> future,long since){}
     private static final class Prepared {
@@ -68,7 +74,7 @@ public final class DestructionEngine {
         if(h==null||h.done)return;h.released=true;
         // Explicit opt-in/default for 0.3 requested semantics: no tick budget in this synchronous burst.
         // Never join unfinished geometry or synchronously generate chunks here.
-        if(!CataclysmConfig.INSTANT_IMPACT.get()||h.plan.spell==Spell.END_OF_ALL)return;
+        if(!CataclysmConfig.INSTANT_IMPACT.get()||(h.plan.spell==Spell.END_OF_ALL||h.plan.spell==Spell.VERDANT_RUIN))return;
         for(var it=h.ready.iterator();it.hasNext();){Prepared p=it.next();
             if(!p.geometry.isDone()||p.geometry.isCompletedExceptionally())continue;
             var loaded=h.level.getChunkSource().getChunkNow(p.pos.x,p.pos.z);if(loaded==null)continue;
@@ -98,7 +104,7 @@ public final class DestructionEngine {
             }
         }
         for(var it=JOBS.iterator();it.hasNext();){Handle h=it.next();
-            if(h.released&&h.todo.isEmpty()&&h.loading.isEmpty()&&h.ready.isEmpty()&&h.current==null&&h.pendingLights==0){
+            if(h.released&&h.todo.isEmpty()&&h.loading.isEmpty()&&h.ready.isEmpty()&&h.current==null&&h.capture==null&&h.pendingLights==0){
                 h.done=true;lastResult=h.plan.spell.id+": blocks="+h.blocks+", chunks="+h.committed+", skipped="+h.skipped+", failed="+h.failed+", burst="+h.burstChunks+", ignitions="+h.ignitions+", biomeChunks="+h.biomeChunks;
                 LogUtils.getLogger().info("[Cataclysm] COMPLETE {}",lastResult);notice(h,true);it.remove();
             }
@@ -106,9 +112,10 @@ public final class DestructionEngine {
     }
     private static void prepareWindow(Handle h,long deadline){
         var cache=h.level.getChunkSource();
+        if(h.capture!=null){captureLife(h,deadline);if(h.capture!=null)return;}
         for(Prepared p:h.ready)if(!p.counted&&p.geometry.isDone()&&!p.geometry.isCompletedExceptionally()){p.counted=true;if(h.preparedPositions.add(p.pos.toLong()))h.prepared++;}
         for(var it=h.loading.iterator();it.hasNext();){Loading l=it.next();LevelChunk chunk=cache.getChunkNow(l.pos.x,l.pos.z);
-            if(chunk!=null){snapshot(h,chunk);it.remove();}
+            if(chunk!=null&&System.nanoTime()<deadline){snapshot(h,chunk);it.remove();if(h.capture!=null){captureLife(h,deadline);break;}}
             else if(h.level.getGameTime()-l.since>1200||l.future.isCompletedExceptionally()){
                 cache.removeRegionTicket(TICKET,l.pos,0,h.id);it.remove();retry(h,l.pos,"load timeout/failure");
             }
@@ -116,7 +123,7 @@ public final class DestructionEngine {
         int captured=0,skips=0;
         while(!h.todo.isEmpty()&&System.nanoTime()<deadline&&captured<2&&skips<24&&h.ready.size()<CataclysmConfig.MAX_PREPARED.get()&&h.ready.stream().filter(p->!p.geometry.isDone()).count()<4){
             ChunkPos p=h.todo.peek();LevelChunk c=cache.getChunkNow(p.x,p.z);
-            if(c!=null){h.todo.remove();cache.addRegionTicket(TICKET,p,0,h.id);snapshot(h,c);captured++;}
+            if(c!=null){h.todo.remove();cache.addRegionTicket(TICKET,p,0,h.id);snapshot(h,c);captured++;if(h.capture!=null){captureLife(h,deadline);break;}}
             else if(CataclysmConfig.GENERATE_CHUNKS.get()){
                 if(h.loading.size()>=LOADS)break;
                 h.todo.remove();cache.addRegionTicket(TICKET,p,0,h.id);
@@ -126,6 +133,7 @@ public final class DestructionEngine {
     }
     /** Copy immutable states on the server; calculate every replacement before release. */
     private static void snapshot(Handle h,LevelChunk chunk){
+        if(h.plan.spell==Spell.VERDANT_RUIN){h.capture=new Capture(chunk);return;}
         int min=h.level.getMinBuildHeight(),max=h.level.getMaxBuildHeight(),cx=chunk.getPos().getMinBlockX(),cz=chunk.getPos().getMinBlockZ();
         var samples=new PreparedChunk.Sample[256];var pos=new BlockPos.MutableBlockPos();
         for(int i=0;i<256;i++){
@@ -141,6 +149,22 @@ public final class DestructionEngine {
         var future=CompletableFuture.supplyAsync(()->new PreparedChunk(h.plan,cx,cz,samples),worker());
         boolean pin=h.ready.stream().filter(p->p.pinned).count()<CataclysmConfig.PINNED_CHUNKS.get();
         h.ready.add(new Prepared(chunk,future,pin));if(!pin)unpin(h,chunk.getPos());
+    }
+    private static void captureLife(Handle h,long deadline){
+        Capture cap=h.capture;var chunk=cap.chunk;int cx=chunk.getPos().getMinBlockX(),cz=chunk.getPos().getMinBlockZ();
+        var pos=new BlockPos.MutableBlockPos();
+        while(cap.cursor<256&&System.nanoTime()<deadline){
+            int i=cap.cursor++,lx=i&15,lz=i>>4,x=cx+lx,z=cz+lz;
+            var c=h.plan.column(x,z,chunk.getHeight(Heightmap.Types.WORLD_SURFACE,lx,lz),h.level.getMinBuildHeight(),h.level.getMaxBuildHeight());
+            if(c==null)continue;var states=new BlockState[c.top()-c.bottom()+1];var immune=new BitSet(states.length);
+            for(int y=c.bottom();y<=c.top();y++){pos.set(x,y,z);int k=y-c.bottom();var old=chunk.getBlockState(pos);states[k]=old;if(protectedBlock(h,old,pos))immune.set(k);}
+            cap.samples[i]=new PreparedChunk.Sample(c,states,immune);
+        }
+        if(cap.cursor==256){
+            var future=CompletableFuture.supplyAsync(()->new PreparedChunk(h.plan,cx,cz,cap.samples),worker());
+            boolean pin=h.ready.stream().filter(p->p.pinned).count()<CataclysmConfig.PINNED_CHUNKS.get();
+            h.ready.add(new Prepared(chunk,future,pin));if(!pin)unpin(h,chunk.getPos());h.capture=null;
+        }
     }
     private static boolean protectedBlock(Handle h,BlockState state,BlockPos pos){
         if(state.is(net.minecraft.world.level.block.Blocks.BEDROCK))return h.plan.spell.tier()<10||!CataclysmConfig.BREAK_BEDROCK.get();
@@ -234,6 +258,7 @@ public final class DestructionEngine {
     }
     public static void abort(Handle h){
         if(h==null||h.done)return;h.cancelled=true;
+        if(h.capture!=null){unpin(h,h.capture.chunk.getPos());h.capture=null;}
         if(h.current!=null){finish(h,h.current);h.current=null;}
         for(Prepared p:h.ready){p.geometry.cancel(false);if(p.pinned)unpin(h,p.pos);}h.ready.clear();
         for(Loading l:h.loading)unpin(h,l.pos);h.loading.clear();h.todo.clear();h.released=true;

@@ -19,34 +19,35 @@ import java.nio.file.*;
 /** Deliberately staged client preview: no server spell or terrain-destruction claims. */
 @EventBusSubscriber(modid=Cataclysm.MODID,value=Dist.CLIENT)
 public final class StylePreviewQA {
+ static int worldLogged=-1;
  static int ticks,scene=-1,frame,hold,globalFrame;static boolean requested,configured;static volatile boolean positioned;
- static final float[] SHOTS={24,76,-.18f,-.40f,-.62f,-.84f,10000-2,10000,10000+2,10000+5,10000+8,10000+14,10000+26,10000+55,10000+100,20000,30000,40000};
+ static final float[] SHOTS={24,76,-.10f,-.28f,-.50f,-.74f,-.91f,10000-2,10000,10000+2,10000+5,10000+8,10000+14,10000+26,10000+55,10000+100,20000,30000,40000};
  static boolean enabled(){return Boolean.getBoolean("ac.styleqa");}
  static void require(boolean test,String msg){if(!test)throw new AssertionError(msg);}
  @SubscribeEvent public static void tick(ClientTickEvent.Post e){
   if(!enabled())return;var m=Minecraft.getInstance();ticks++;m.options.pauseOnLostFocus=false;
   if(!requested&&ticks>40&&m.getOverlay()==null){
-   requested=true;m.getTutorial().setStep(net.minecraft.client.tutorial.TutorialSteps.NONE);m.getToasts().clear();m.options.renderDistance().set(4);m.options.simulationDistance().set(5);m.options.guiScale().set(Boolean.getBoolean("ac.stylecompact")?3:2);m.options.fov().set(70);m.options.bobView().set(false);m.options.framerateLimit().set(60);m.resizeDisplay();
+   requested=true;m.getTutorial().setStep(net.minecraft.client.tutorial.TutorialSteps.NONE);m.getToasts().clear();m.options.renderDistance().set(Boolean.getBoolean("ac.styleworld")?10:4);m.options.simulationDistance().set(5);m.options.guiScale().set(Boolean.getBoolean("ac.stylecompact")?3:2);m.options.fov().set(70);m.options.bobView().set(false);m.options.framerateLimit().set(60);m.resizeDisplay();
    var rules=new GameRules();rules.getRule(GameRules.RULE_SPAWN_CHUNK_RADIUS).set(0,null);rules.getRule(GameRules.RULE_DOMOBSPAWNING).set(false,null);rules.getRule(GameRules.RULE_DAYLIGHT).set(false,null);
    m.createWorldOpenFlows().createFreshLevel("StyleDisposable-"+System.currentTimeMillis(),new LevelSettings("Style review / no terrain edits",GameType.CREATIVE,false,Difficulty.PEACEFUL,true,rules,WorldDataConfiguration.DEFAULT),new WorldOptions(5042,false,false),r->r.registryOrThrow(Registries.WORLD_PRESET).getHolderOrThrow(WorldPresets.FLAT).value().createWorldDimensions(),m.screen);
   }
   if(m.level==null||m.player==null||m.getSingleplayerServer()==null)return;
   if(!configured){configured=true;m.getSingleplayerServer().execute(()->{
    var s=m.getSingleplayerServer();var p=s.getPlayerList().getPlayer(m.player.getUUID());
-   p.teleportTo(0,-56,-52);p.setGameMode(GameType.CREATIVE);p.getAbilities().flying=true;p.onUpdateAbilities();p.setYRot(0);p.setXRot(0);p.getInventory().setItem(0,Cataclysm.GRIMOIRE.get().getDefaultInstance());p.getInventory().selected=0;
+   p.teleportTo(Boolean.getBoolean("ac.styleworld")?55:0,Boolean.getBoolean("ac.styleworld")?14:-56,Boolean.getBoolean("ac.styleworld")?-95:-52);p.setGameMode(GameType.CREATIVE);p.getAbilities().flying=true;p.onUpdateAbilities();p.setYRot(0);p.setXRot(Boolean.getBoolean("ac.styleworld")?34:0);p.getInventory().setItem(0,Cataclysm.GRIMOIRE.get().getDefaultInstance());p.getInventory().selected=0;
    s.overworld().setDayTime(1000);positioned=true;
   });ticks=0;}
   if(m.screen!=null)m.setScreen(null);
-  if(positioned&&scene<0&&ticks>80){
-   require(ScreenFX.invocation!=null&&ScreenFX.saga!=null,"cinematic shaders not loaded");
-   ClientOptions.CAMERA.set(true);ClientOptions.POST.set(true);ClientOptions.ASTRAL.set(true);ClientOptions.FLASH.set(true);ClientOptions.SHAKE.set(true);ClientOptions.GLITCH.set(true);
+  if(positioned&&scene<0&&ticks>(Boolean.getBoolean("ac.styleworld")?200:80)){
+   require(ScreenFX.invocation!=null&&java.util.Arrays.stream(SpellFilm.shaders).allMatch(java.util.Objects::nonNull),"cinematic shaders not loaded");
+   ClientOptions.CAMERA.set(!Boolean.getBoolean("ac.styleworld"));ClientOptions.POST.set(!Boolean.getBoolean("ac.styleworld"));ClientOptions.ASTRAL.set(!Boolean.getBoolean("ac.styleworld"));m.options.hideGui=Boolean.getBoolean("ac.styleworld");ClientOptions.FLASH.set(true);ClientOptions.SHAKE.set(true);ClientOptions.GLITCH.set(true);
    scene=Integer.getInteger("ac.styleonly",Integer.getInteger("ac.stylefrom",0));require(scene>=0&&scene<15,"invalid fixture start");globalFrame=scene*144;start();
    if(Boolean.getBoolean("ac.stylecompact"))require(m.getWindow().getGuiScaledWidth()==320&&m.getWindow().getGuiScaledHeight()==240,"compact fixture dimensions");
    System.out.println("STYLE_CLIENT_READY gui="+m.getWindow().getGuiScaledWidth()+"x"+m.getWindow().getGuiScaledHeight()+" renderer="+com.mojang.blaze3d.systems.RenderSystem.getBackendDescription());
   }
  }
  static void start(){
-  var m=Minecraft.getInstance();for(var f:ClientEffects.ACTIVE)if(f.chargeSound!=null)m.getSoundManager().stop(f.chargeSound);ClientEffects.ACTIVE.clear();
+  var m=Minecraft.getInstance();for(var f:ClientEffects.ACTIVE){SpellFilm.stop(f);if(f.chargeSound!=null)m.getSoundManager().stop(f.chargeSound);}ClientEffects.ACTIVE.clear();
   if(Boolean.getBoolean("ac.stylecommandqa")){
    int current=scene;
    m.getSingleplayerServer().execute(()->{
@@ -84,18 +85,32 @@ public final class StylePreviewQA {
  @SubscribeEvent public static void before(RenderFrameEvent.Pre e){
   if(!enabled()||scene<0||scene>=15||ClientEffects.ACTIVE.isEmpty())return;
   ClientEffects.ACTIVE.getLast().age=age();
+  if(Boolean.getBoolean("ac.styleworld")){
+   var p=Minecraft.getInstance().player;
+   float pitch=switch(scene){case 8->10;case 9->0;case 10->25;case 11,14->20;case 12->5;default->35;};
+   p.setXRot(pitch);p.xRotO=pitch;p.setYRot(30);p.yRotO=30;
+  }
+  var active=ClientEffects.ACTIVE.getLast();
+  if(SpellFilm.epic(active.spell)&&!Boolean.getBoolean("ac.styleworld")&&age()<active.spell.impact+100){
+   require(SpellFilm.running(),"high tier did not enter independent film");
+   require(ClientEffects.view(Minecraft.getInstance().gameRenderer.getMainCamera(),0)==null,"film moved real camera");
+  }
   if(!Boolean.getBoolean("ac.stylemovie")){
    float shot=SHOTS[frame];
    ClientOptions.FLASH.set(shot!=20000);ClientOptions.GLITCH.set(shot!=30000);ClientOptions.SHAKE.set(shot!=40000);
    if(shot==40000)require(ClientEffects.shake(0)==0,"shake opt-out ignored");
   }
  }
+ @SubscribeEvent public static void world(RenderLevelStageEvent e){
+  if(!enabled()||!Boolean.getBoolean("ac.styleworld")||scene<0||scene==worldLogged||frame!=4||e.getStage()!=RenderLevelStageEvent.Stage.AFTER_PARTICLES)return;
+  worldLogged=scene;var m=Minecraft.getInstance();System.out.println("WORLD_CAMERA_CHECK scene="+scene+" player="+m.player.position()+" camera="+e.getCamera().getPosition()+" pitch="+e.getCamera().getXRot()+" yaw="+e.getCamera().getYRot()+" targetLoaded="+m.level.hasChunkAt(new net.minecraft.core.BlockPos(0,-60,0))+" target="+m.level.getBlockState(new net.minecraft.core.BlockPos(0,-60,0)));
+ }
  @SubscribeEvent public static void after(RenderFrameEvent.Post e){
   if(!enabled()||scene<0||scene>=15||ClientEffects.ACTIVE.isEmpty())return;
   var m=Minecraft.getInstance();if(m.level==null||m.screen!=null||m.getOverlay()!=null)return;
   boolean movie=Boolean.getBoolean("ac.stylemovie");if(!movie&&++hold<3)return;hold=0;
   try{
-   Path dir=Path.of(Boolean.getBoolean("ac.stylecompact")?"qa/style-compact":Boolean.getBoolean("ac.styleimpactmovie")?"qa/impact-movie":movie?"qa/style-movie":"qa/style-shots");Files.createDirectories(dir);
+   Path dir=Path.of(Boolean.getBoolean("ac.styleworld")?"qa/world061":Boolean.getBoolean("ac.stylecompact")?"qa/style-compact":Boolean.getBoolean("ac.styleimpactmovie")?"qa/impact-movie":movie?"qa/style-movie":"qa/style-shots");Files.createDirectories(dir);
    String file=movie?String.format("%05d.png",globalFrame++):String.format("%02d-%s-%02d-age-%03d.png",scene,Spell.values()[scene].id,frame,age());
    try(var image=Screenshot.takeScreenshot(m.getMainRenderTarget())){image.writeToFile(dir.resolve(file));}
    frame++;
@@ -104,10 +119,10 @@ public final class StylePreviewQA {
     if(scene<15&&!Boolean.getBoolean("ac.styleonly.enabled"))start();else{
      var f=ClientEffects.ACTIVE.getLast();
      ClientOptions.FLASH.set(true);ClientOptions.GLITCH.set(true);ClientOptions.SHAKE.set(true);
-     require(InvocationDirector.supports(Spell.STARFALL)&&InvocationDirector.supports(Spell.TECTONIC_RIFT)&&InvocationDirector.supports(Spell.RUNE_APOCALYPSE)&&!InvocationDirector.supports(Spell.END_OF_ALL),"scope");
+     require(InvocationDirector.supports(Spell.STARFALL)&&InvocationDirector.supports(Spell.TECTONIC_RIFT)&&SpellFilm.epic(Spell.RUNE_APOCALYPSE)&&!InvocationDirector.supports(Spell.RUNE_APOCALYPSE)&&!InvocationDirector.supports(Spell.END_OF_ALL),"scope");
      ClientOptions.ASTRAL.set(false);require(InvocationDirector.theatre(f,150)==0,"astral opt-out ignored");ClientOptions.ASTRAL.set(true);
      ClientOptions.CAMERA.set(false);require(ClientEffects.cinematic()==null,"camera opt-out ignored");ClientOptions.CAMERA.set(true);
-     f.skipped=true;require(ClientEffects.cinematic()==null,"skip ignored");
+     f.skipped=true;require(ClientEffects.cinematic()==null,"skip ignored");SpellFilm.audio(f);require(f.scoreSound==null&&!SpellFilm.running(),"film/score survived skip");
      System.out.println("STYLE_ALL_PASS (staged client visuals, all fifteen ordinary spells; no destructive-server claims)");m.stop();
     }
    }

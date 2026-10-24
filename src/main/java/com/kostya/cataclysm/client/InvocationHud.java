@@ -59,8 +59,7 @@ public final class InvocationHud {
         BufferUploader.drawWithShader(mesh.buildOrThrow());mesh=null;RenderSystem.enableCull();
         // A large, stable chapter caption inside the letterbox, with a protected dark backing.
         String phase=age<65?"awaken":age<f.spell.impact*.65?"manifest":age<f.spell.impact?"release":"aftermath";
-        int chapter=age<f.spell.impact*.18?0:age<f.spell.impact*.40?1:age<f.spell.impact*.66?2:age<f.spell.impact?3:4;
-        Component text=Component.translatable(InvocationDirector.epic(f.spell)?"hud.arcane_cataclysm.saga."+f.spell.id+"."+chapter:"hud.arcane_cataclysm.phase."+phase);
+        Component text=Component.translatable("hud.arcane_cataclysm.phase."+phase);
         float scale=Math.min(1.35f,(w-148f)/Math.max(1,mc.font.width(text)));
         int tw=(int)(mc.font.width(text)*scale),cx=w/2,y=Math.max(3,(bar-13)/2);
         double onset=switch(phase){case "awaken"->0;case "manifest"->65;case "release"->f.spell.impact*.65;default->f.spell.impact;};

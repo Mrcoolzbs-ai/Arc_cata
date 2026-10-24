@@ -20,7 +20,9 @@ public final class ClientSetup {
     @SubscribeEvent public static void shaders(RegisterShadersEvent e)throws IOException{
         e.registerShader(new ShaderInstance(e.getResourceProvider(),Cataclysm.id("end_scene"),DefaultVertexFormat.POSITION_TEX_COLOR),s->EndCinematic.shader=s);
         e.registerShader(new ShaderInstance(e.getResourceProvider(),Cataclysm.id("invocation"),DefaultVertexFormat.POSITION_TEX_COLOR),s->ScreenFX.invocation=s);
-        e.registerShader(new ShaderInstance(e.getResourceProvider(),Cataclysm.id("saga"),DefaultVertexFormat.POSITION_TEX_COLOR),s->ScreenFX.saga=s);
+        for(int id=9;id<15;id++){final int index=id-9;
+            e.registerShader(new ShaderInstance(e.getResourceProvider(),Cataclysm.id(id==9?"saga":"film_"+id),DefaultVertexFormat.POSITION_TEX_COLOR),s->SpellFilm.shaders[index]=s);
+        }
         e.registerShader(new ShaderInstance(e.getResourceProvider(),Cataclysm.id("ac_post"),DefaultVertexFormat.POSITION_TEX_COLOR),s->ScreenFX.shader=s);
         e.registerShader(new ShaderInstance(e.getResourceProvider(),Cataclysm.id("ac_glow"),DefaultVertexFormat.POSITION_TEX_COLOR),s->FxMesh.glow=s);
         e.registerShader(new ShaderInstance(e.getResourceProvider(),Cataclysm.id("ac_rune"),DefaultVertexFormat.POSITION_TEX_COLOR),s->FxMesh.rune=s);
@@ -28,5 +30,5 @@ public final class ClientSetup {
         e.registerShader(new ShaderInstance(e.getResourceProvider(),Cataclysm.id("ac_void"),DefaultVertexFormat.POSITION_TEX_COLOR_NORMAL),s->FxMesh.voidEnergy=s);
         e.registerShader(new ShaderInstance(e.getResourceProvider(),Cataclysm.id("ac_surface"),DefaultVertexFormat.POSITION_TEX_COLOR_NORMAL),s->FxMesh.surface=s);
     }
-    @SubscribeEvent public static void layers(RegisterGuiLayersEvent e){e.registerBelowAll(Cataclysm.id("screen_fx"),ScreenFX::render);e.registerAboveAll(Cataclysm.id("spell_hud"),ClientEffects::hud);e.registerAboveAll(Cataclysm.id("end_scene"),EndCinematic::layer);}
+    @SubscribeEvent public static void layers(RegisterGuiLayersEvent e){e.registerBelowAll(Cataclysm.id("screen_fx"),ScreenFX::render);e.registerAboveAll(Cataclysm.id("spell_hud"),ClientEffects::hud);e.registerAboveAll(Cataclysm.id("spell_film"),SpellFilm::layer);e.registerAboveAll(Cataclysm.id("end_scene"),EndCinematic::layer);}
 }

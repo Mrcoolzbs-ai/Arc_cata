@@ -11,10 +11,10 @@ import org.lwjgl.opengl.GL30;
 
 /** Astral inserts are a separate procedural scene, NOT a camera teleported into unloaded world chunks. */
 public final class ScreenFX {
-    public static ShaderInstance shader,invocation,saga;
+    public static ShaderInstance shader,invocation;
     private static TextureTarget copy;
     public static void render(GuiGraphics gui,DeltaTracker delta){
-        if(shader==null||ClientEffects.ACTIVE.isEmpty()||!ClientOptions.POST.get())return;
+        if(SpellFilm.running()||shader==null||ClientEffects.ACTIVE.isEmpty()||!ClientOptions.POST.get())return;
         var mc=Minecraft.getInstance();if(mc.player==null||mc.player.isSpectator()||mc.options.hideGui)return;
         var f=ClientEffects.cinematic();if(f==null){
             for(var candidate:ClientEffects.ACTIVE)if(mc.player.position().distanceToSqr(candidate.packet.target())<400*400){f=candidate;break;}
@@ -32,8 +32,8 @@ public final class ScreenFX {
         GL30.glBlitFramebuffer(0,0,main.width,main.height,0,0,copy.width,copy.height,GL30.GL_COLOR_BUFFER_BIT,GL30.GL_NEAREST);
         main.bindWrite(true);
         RenderSystem.disableDepthTest();RenderSystem.depthMask(false);RenderSystem.disableBlend();RenderSystem.disableCull();
-        boolean directed=InvocationDirector.supports(f.spell)&&ClientEffects.cinematic()==f&&invocation!=null;
-        ShaderInstance active=directed?(InvocationDirector.epic(f.spell)&&saga!=null?saga:invocation):shader;
+        boolean directed=!SpellFilm.epic(f.spell)&&InvocationDirector.supports(f.spell)&&ClientEffects.cinematic()==f&&invocation!=null;
+        ShaderInstance active=directed?invocation:shader;
         RenderSystem.setShaderColor(1,1,1,1);RenderSystem.setShader(()->active);RenderSystem.setShaderTexture(0,copy.getColorTextureId());
         active.safeGetUniform("FxParams").set((float)(directed?f.spell.ordinal():f.spell.visualId()),phase,directed?InvocationDirector.theatre(f,age):realm,directed?(ClientOptions.FLASH.get()?1f:0f):shock);
         active.safeGetUniform("FxColor2").set(((f.spell.color>>16)&255)/255f,((f.spell.color>>8)&255)/255f,(f.spell.color&255)/255f,ClientOptions.BLOOM.get().floatValue());

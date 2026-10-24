@@ -62,6 +62,15 @@ void main() {
         col = mix(vertexColor.rgb, FxColor2.rgb, fres);
         col = mix(col, vec3(1.0), pow(fres, 4.0));
         a = 0.25 + pow(fres, 1.5) * 0.85 + lines;
+    } else if (mode == 7) {
+        // Matte solid matter: no animated FBM, emissive seams or translucent overdraw.
+        float n=acNoise(worldPos*.18);
+        float lit=.48+.52*abs(dot(normalize(viewNormal),normalize(vec3(-.4,.8,.6))));
+        col=vertexColor.rgb*(.75+n*.25)*lit;a=1.;
+    } else if (mode == 8) {
+        float n=acNoise(worldPos*.12+vec3(0,FxTime*.25,0));
+        float foam=smoothstep(.91,.99,texCoord.y)*(.55+.45*n);
+        col=mix(vertexColor.rgb*(.65+n*.4),FxColor2.rgb,foam);a=.93;
     } else if (mode == 6) {
         // Opaque ritual masonry: broad material variation, directional form and sparse emissive seams.
         float n=acFbm(worldPos*.04);

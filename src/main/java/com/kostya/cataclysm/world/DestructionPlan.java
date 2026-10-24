@@ -26,9 +26,9 @@ public final class DestructionPlan {
    case SINGULARITY->{double h=Math.sqrt(r*r-d*d);floor=(int)(center.y+18*scale-h);hi=(int)(center.y+18*scale+h);if(u>.79&&u<.86)spike=(int)(18*scale);}
    case SOLAR_NOVA->{floor=(int)(center.y-112*scale*(1-u*u));hi=Math.max(terrain,(int)(center.y+r*.7));if(u>.88)spike=(int)(Math.max(0,Math.sin(a*23))*20*scale);}
    case LAST_CATACLYSM->{floor=(int)(center.y-150*scale*(1-u*u));floor=(int)(Math.floor(floor/8.)*8);hi=Math.max(terrain,(int)(center.y+110*scale));if(Math.abs(d-r*.75)<4*scale&&Math.abs(Math.sin(a*6))<.15)spike=Math.max(0,terrain-floor)+(int)(70*scale);}
-   case VERDANT_RUIN->{floor=(int)(center.y-165*scale*(1-u*u));hi=Math.max(terrain,(int)(center.y+70*scale));double root=Math.abs(Math.sin(a*9+d*.017))*d;if(root<Math.max(2,5*scale))spike=Math.max(0,terrain-floor)+(int)(35*scale*(1-u));if(u<.1)spike=Math.max(0,terrain-floor)+(int)(125*scale*(1-u/.12));}
+   case VERDANT_RUIN->{floor=(int)(center.y-165*scale*(1-u*u));hi=terrain;/* Withering leaves a barren crater, not permanent giant wood/moss scaffolding. */}
    case OBSIDIAN_CATHEDRAL->{floor=(int)(center.y-178*scale*(1-u*u));hi=Math.max(terrain,(int)(center.y+110*scale));double ring=Math.abs(d-r*.68);if(ring<5*scale&&Math.abs(Math.sin(a*8))<.22)spike=Math.max(0,terrain-floor)+(int)(110*scale);if(u<.075)spike=Math.max(0,terrain-floor)+(int)(145*scale);}
-   case ABYSSAL_DELUGE->{floor=(int)(center.y-195*scale*Math.pow(1-u*u,.6));hi=Math.max(terrain,(int)(center.y+30*scale));if(u>.86&&Math.abs(Math.sin(a*17))>.97)spike=Math.max(0,terrain-floor)+(int)(70*scale);}
+   case ABYSSAL_DELUGE->{floor=(int)(center.y-195*scale*Math.pow(1-u*u,.6));hi=Math.max(terrain,0);if(u>.86&&Math.abs(Math.sin(a*17))>.97)spike=Math.max(0,terrain-floor)+(int)(70*scale);}
    case WORLD_SUNDER->{double fault=Math.abs(Math.sin(a*7+d*.006));floor=(int)(center.y-(85+155*(1-fault))*scale*(1-u*.65));hi=Math.max(terrain,(int)(center.y+90*scale));if(fault>.9)spike=Math.max(0,terrain-floor)+(int)(55*scale*(1-u));}
    case END_OF_ALL->{return new Column(min,max-1,min-1,0,false,false,terrain);}
    case RUNE_APOCALYPSE->{floor=(int)(center.y-280*scale*(1-u*.65));hi=max-1;double bands=Math.abs(Math.sin(d/(Math.max(1,28*scale))));if(bands<.09&&Math.abs(Math.sin(a*12))<.22)spike=Math.max(0,terrain-floor)+(int)(100*scale);if(u<.05)spike=0;}
@@ -44,7 +44,7 @@ public final class DestructionPlan {
   if(c.freeze){if(y>c.floor)return Blocks.BLUE_ICE.defaultBlockState();if(old.isAir())return old;if(!old.getFluidState().isEmpty())return Blocks.ICE.defaultBlockState();return(y==c.floor?Blocks.SNOW_BLOCK:Blocks.PACKED_ICE).defaultBlockState();}
   if(y>c.floor){
    if(y<=c.floor+c.spike)return built(c,x,y,z);
-   if(spell==Spell.ABYSSAL_DELUGE&&y<Math.min(c.base,(int)center.y)-4*scale)return Blocks.WATER.defaultBlockState();
+   if(spell==Spell.ABYSSAL_DELUGE&&y<=0)return Blocks.WATER.defaultBlockState();
    return Blocks.AIR.defaultBlockState();
   }
   if(old.isAir())return old;double h=noise(x,z+y);
@@ -57,7 +57,7 @@ public final class DestructionPlan {
    case INFERNO_TIDE->h<.6?Blocks.NETHERRACK:Blocks.BASALT;
    case SINGULARITY->h<.12?Blocks.CRYING_OBSIDIAN:Blocks.POLISHED_BLACKSTONE;
    case SOLAR_NOVA->h<.55?Blocks.ORANGE_STAINED_GLASS:Blocks.OBSIDIAN;
-   case VERDANT_RUIN->h<.35?Blocks.ROOTED_DIRT:Blocks.MOSS_BLOCK;
+   case VERDANT_RUIN->h<.35?Blocks.ROOTED_DIRT:Blocks.COARSE_DIRT;
    case OBSIDIAN_CATHEDRAL->h<.15?Blocks.CRYING_OBSIDIAN:Blocks.OBSIDIAN;
    case ABYSSAL_DELUGE->h<.2?Blocks.SEA_LANTERN:Blocks.DARK_PRISMARINE;
    case RUNE_APOCALYPSE->h<.12?Blocks.GLOWSTONE:Blocks.END_STONE_BRICKS;

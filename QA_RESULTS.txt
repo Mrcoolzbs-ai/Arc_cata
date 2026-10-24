@@ -1,89 +1,91 @@
-Arcane Cataclysm 0.6.0-cinematic-preview — fresh checks
+Arcane Cataclysm 0.6.1-cinematic-rework — checks from this workspace
 
-initial-client-all15
-STYLE_CLIENT_READY gui=480x270 renderer=LWJGL version 3.3.3+5
-STYLE_PREVIEW_PERMISSION_SCOPE_PASS
-STYLE_COMMAND_PACKET_PASS spell=heavens_lance
-STYLE_SCENE_PASS spell=heavens_lance frames=16
-STYLE_COMMAND_PACKET_PASS spell=thousand_blades
-STYLE_SCENE_PASS spell=thousand_blades frames=16
-STYLE_COMMAND_PACKET_PASS spell=snow_grave
-STYLE_SCENE_PASS spell=snow_grave frames=16
-STYLE_COMMAND_PACKET_PASS spell=tempest_wrath
-STYLE_SCENE_PASS spell=tempest_wrath frames=16
-STYLE_COMMAND_PACKET_PASS spell=starfall
-STYLE_SCENE_PASS spell=starfall frames=16
-STYLE_COMMAND_PACKET_PASS spell=tectonic_rift
-STYLE_SCENE_PASS spell=tectonic_rift frames=16
-STYLE_COMMAND_PACKET_PASS spell=inferno_tide
-STYLE_SCENE_PASS spell=inferno_tide frames=16
-STYLE_COMMAND_PACKET_PASS spell=singularity
-STYLE_SCENE_PASS spell=singularity frames=16
-STYLE_COMMAND_PACKET_PASS spell=solar_nova
-STYLE_SCENE_PASS spell=solar_nova frames=16
-STYLE_COMMAND_PACKET_PASS spell=last_cataclysm
-STYLE_SCENE_PASS spell=last_cataclysm frames=16
-STYLE_COMMAND_PACKET_PASS spell=verdant_ruin
-STYLE_SCENE_PASS spell=verdant_ruin frames=16
-STYLE_COMMAND_PACKET_PASS spell=obsidian_cathedral
-STYLE_SCENE_PASS spell=obsidian_cathedral frames=16
-STYLE_COMMAND_PACKET_PASS spell=abyssal_deluge
-STYLE_SCENE_PASS spell=abyssal_deluge frames=16
-STYLE_COMMAND_PACKET_PASS spell=world_sunder
-STYLE_SCENE_PASS spell=world_sunder frames=16
-STYLE_COMMAND_PACKET_PASS spell=rune_apocalypse
-STYLE_SCENE_PASS spell=rune_apocalypse frames=16
-STYLE_ALL_PASS (staged client visuals, all fifteen ordinary spells; no destructive-server claims)
-BUILD SUCCESSFUL in 10m 14s
 
-final-client-changed-range
-STYLE_CLIENT_READY gui=480x270 renderer=LWJGL version 3.3.3+5
-STYLE_COMMAND_PACKET_PASS spell=tempest_wrath
-STYLE_SCENE_PASS spell=tempest_wrath frames=18
-STYLE_COMMAND_PACKET_PASS spell=starfall
-STYLE_SCENE_PASS spell=starfall frames=18
-STYLE_COMMAND_PACKET_PASS spell=tectonic_rift
-STYLE_SCENE_PASS spell=tectonic_rift frames=18
-STYLE_COMMAND_PACKET_PASS spell=inferno_tide
-STYLE_SCENE_PASS spell=inferno_tide frames=18
-STYLE_COMMAND_PACKET_PASS spell=singularity
-STYLE_SCENE_PASS spell=singularity frames=18
-STYLE_COMMAND_PACKET_PASS spell=solar_nova
-STYLE_SCENE_PASS spell=solar_nova frames=18
-STYLE_COMMAND_PACKET_PASS spell=last_cataclysm
-STYLE_SCENE_PASS spell=last_cataclysm frames=18
-STYLE_COMMAND_PACKET_PASS spell=verdant_ruin
-STYLE_SCENE_PASS spell=verdant_ruin frames=18
-STYLE_COMMAND_PACKET_PASS spell=obsidian_cathedral
-STYLE_SCENE_PASS spell=obsidian_cathedral frames=18
-STYLE_COMMAND_PACKET_PASS spell=abyssal_deluge
-STYLE_SCENE_PASS spell=abyssal_deluge frames=18
-STYLE_COMMAND_PACKET_PASS spell=world_sunder
-STYLE_SCENE_PASS spell=world_sunder frames=18
-STYLE_COMMAND_PACKET_PASS spell=rune_apocalypse
-STYLE_SCENE_PASS spell=rune_apocalypse frames=18
-STYLE_ALL_PASS (staged client visuals, all fifteen ordinary spells; no destructive-server claims)
-BUILD SUCCESSFUL in 6m 2s
-
-compact-320x240
-STYLE_CLIENT_READY gui=320x240 renderer=LWJGL version 3.3.3+5
-STYLE_SCENE_PASS spell=rune_apocalypse frames=18
-STYLE_ALL_PASS (staged client visuals, all fifteen ordinary spells; no destructive-server claims)
-BUILD SUCCESSFUL in 1m 9s
-
-dedicated-pure-regression
-AC4_PATCH_PASS geometryColumns=326717 replacementStates=5676710
+Pure geometry + schedule/codec
+AC061_WATER_PASS y=0-inclusive states=3095 targets=-60,0,60,200 minY=-128,-64,16 scales=.1,1,1.5
+AC4_PATCH_PASS geometryColumns=326717 replacementStates=5340156
 AC4_SCHEDULE_CODEC_PASS players=1..240 waves=9,17,21,25,29,42 duration=45
 AC4_PURE_ALL_PASS (no live-server or multiplayer claims)
 AC4_BOOTSTRAP_EXIT_NO_WORLD
-BUILD SUCCESSFUL in 16s
 
-Standalone contracts
+Disposable live dedicated-server pipeline
+AC061_LIFE_RELEASE_PASS instantImpact=true blocksAtRelease=0 burstChunks=0 prepared=32
+AC061_LIFE_DONE_PASS blocks=53588 chunks=24 jobs=0, lighting=0, completedChunks=24, changedBlocks=53588; verdant_ruin: blocks=53588, chunks=24, skipped=0, failed=0, burst=0, ignitions=0, biomeChunks=0
+AC061_LIFE_IDLE_PASS ticks=40
+AC061_WATER_LIVE_PASS surface=0 inclusiveWater=-58..0 air=1..60 blocks=636784 chunks=32
+AC061_SERVER_ALL_PASS life=.1 water=.1 idle=true cancel=true; not full-radius stress or multiplayer
+
+Final six films, real preview packets
+STYLE_CLIENT_READY gui=480x270 renderer=LWJGL version 3.3.3+5
+STYLE_COMMAND_PACKET_PASS spell=last_cataclysm
+STYLE_SCENE_PASS spell=last_cataclysm frames=19
+STYLE_COMMAND_PACKET_PASS spell=verdant_ruin
+STYLE_SCENE_PASS spell=verdant_ruin frames=19
+STYLE_COMMAND_PACKET_PASS spell=obsidian_cathedral
+STYLE_SCENE_PASS spell=obsidian_cathedral frames=19
+STYLE_COMMAND_PACKET_PASS spell=abyssal_deluge
+STYLE_SCENE_PASS spell=abyssal_deluge frames=19
+STYLE_COMMAND_PACKET_PASS spell=world_sunder
+STYLE_SCENE_PASS spell=world_sunder frames=19
+STYLE_COMMAND_PACKET_PASS spell=rune_apocalypse
+STYLE_SCENE_PASS spell=rune_apocalypse frames=19
+STYLE_ALL_PASS (staged client visuals, all fifteen ordinary spells; no destructive-server claims)
+
+Final world FX, release source
+STYLE_CLIENT_READY gui=480x270 renderer=LWJGL version 3.3.3+5
+WORLD_CAMERA_CHECK scene=5 player=(55.0, 14.0, -95.0) camera=(55.0, 15.619999885559082, -95.0) pitch=35.0 yaw=30.0 targetLoaded=true target=Block{minecraft:air}
+STYLE_SCENE_PASS spell=tectonic_rift frames=19
+WORLD_CAMERA_CHECK scene=6 player=(55.0, 14.0, -95.0) camera=(55.0, 15.619999885559082, -95.0) pitch=35.0 yaw=30.0 targetLoaded=true target=Block{minecraft:air}
+STYLE_SCENE_PASS spell=inferno_tide frames=19
+WORLD_CAMERA_CHECK scene=7 player=(55.0, 14.0, -95.0) camera=(55.0, 15.619999885559082, -95.0) pitch=35.0 yaw=30.0 targetLoaded=true target=Block{minecraft:air}
+STYLE_SCENE_PASS spell=singularity frames=19
+WORLD_CAMERA_CHECK scene=8 player=(55.0, 14.0, -95.0) camera=(55.0, 15.619999885559082, -95.0) pitch=10.0 yaw=30.0 targetLoaded=true target=Block{minecraft:air}
+STYLE_SCENE_PASS spell=solar_nova frames=19
+WORLD_CAMERA_CHECK scene=9 player=(55.0, 14.0, -95.0) camera=(55.0, 15.619999885559082, -95.0) pitch=0.0 yaw=30.0 targetLoaded=true target=Block{minecraft:air}
+STYLE_SCENE_PASS spell=last_cataclysm frames=19
+WORLD_CAMERA_CHECK scene=10 player=(55.0, 14.0, -95.0) camera=(55.0, 15.619999885559082, -95.0) pitch=25.0 yaw=30.0 targetLoaded=true target=Block{minecraft:air}
+STYLE_SCENE_PASS spell=verdant_ruin frames=19
+WORLD_CAMERA_CHECK scene=11 player=(55.0, 14.0, -95.0) camera=(55.0, 15.619999885559082, -95.0) pitch=20.0 yaw=30.0 targetLoaded=true target=Block{minecraft:air}
+STYLE_SCENE_PASS spell=obsidian_cathedral frames=19
+WORLD_CAMERA_CHECK scene=12 player=(55.0, 14.0, -95.0) camera=(55.0, 15.619999885559082, -95.0) pitch=5.0 yaw=30.0 targetLoaded=true target=Block{minecraft:air}
+STYLE_SCENE_PASS spell=abyssal_deluge frames=19
+WORLD_CAMERA_CHECK scene=13 player=(55.0, 14.0, -95.0) camera=(55.0, 15.619999885559082, -95.0) pitch=35.0 yaw=30.0 targetLoaded=true target=Block{minecraft:air}
+STYLE_SCENE_PASS spell=world_sunder frames=19
+WORLD_CAMERA_CHECK scene=14 player=(55.0, 14.0, -95.0) camera=(55.0, 15.619999885559082, -95.0) pitch=20.0 yaw=30.0 targetLoaded=true target=Block{minecraft:air}
+STYLE_SCENE_PASS spell=rune_apocalypse frames=19
+STYLE_ALL_PASS (staged client visuals, all fifteen ordinary spells; no destructive-server claims)
+
+See TESTING.md for scope/limits. Software OpenGL; no hardware-GPU FPS claim. Live destruction tests scale=.1, not full-radius stress.
+
+Clean release build (no QA flags): BUILD SUCCESSFUL
+RELEASE_JAR_PASS arcane_cataclysm-0.6.1-cinematic-rework.jar bytes=13035975 no_QA=true films=6 scores=6 End_resources=unchanged
+
+tier=1 power=0.944 initialShake=0.944
+tier=2 power=1.240 initialShake=1.240
+tier=3 power=1.536 initialShake=1.536
+tier=4 power=1.832 initialShake=1.832
+tier=5 power=2.104 initialShake=2.104
 IMPACT_DYNAMICS_PASS checks=58881
-VISUAL_CONTRACT_PASS horizontal_seal_call_sites=10
+VISUAL_CONTRACT_PASS horizontal_seal_call_sites=10 halo=XZ camera_roll=0 toggles=verified
 CINEMATIC_CONTRACT_PASS scenes=15 epic=6 chapters=30 stereo_cues=30 preview=private no_caster_tethers=true
-PROTECTED_CONTENT_PASS original catalogue/destruction/End of All sources and assets unchanged
-AUDIO_QA_PASS tracks=30 stereo/duration/decoded loudness/true peak checked; see docs/AUDIO_QA_0.6.json
-PREVIEW_PASS compile/audio playback/desktop/narrow/no horizontal overflow
-RELEASE_CLEAN_BUILD_PASS no QA classes; JSON valid; all 30 audio hashes match
-JAR_SHA256 506cdb62281980b11e39efad47df881403a9696e129479f5a8d1cffcaa33f24e
+FILM_SCORE_PASS last_cataclysm_score.ogg 34
+FILM_SCORE_PASS verdant_ruin_score.ogg 36
+FILM_SCORE_PASS obsidian_cathedral_score.ogg 38
+FILM_SCORE_PASS abyssal_deluge_score.ogg 40
+FILM_SCORE_PASS world_sunder_score.ogg 42
+FILM_SCORE_PASS rune_apocalypse_score.ogg 45
+FILM_CONTRACT_PASS opaque_layer=6 no_HUD_or_real_camera bounded_960x540 continuous_scores=6 transient_world=80ticks y0=explicit incremental_life_snapshot=true
+{
+  "baseline_commit": "3d1a460",
+  "scope": "deterministic flat-world column-range estimate; not FPS or elapsed time",
+  "columns": 389284,
+  "old_snapshot_states": 59021660,
+  "new_snapshot_states": 31671680,
+  "old_above_terrain_structure_cells": 533780,
+  "new_above_terrain_structure_cells": 0
+}
+src/main/java/com/kostya/cataclysm/client/EndCinematic.java: OK
+src/main/resources/assets/arcane_cataclysm/sounds/end_of_all_charge.ogg: OK
+src/main/resources/assets/arcane_cataclysm/sounds/end_of_all_impact.ogg: OK
+src/main/resources/assets/arcane_cataclysm/shaders/core/end_scene.fsh: OK
+src/main/resources/assets/arcane_cataclysm/shaders/core/end_scene.json: OK

@@ -1,0 +1,38 @@
+[
+  {
+    "file": "last_cataclysm_score.ogg",
+    "seconds": 34,
+    "channels": 2,
+    "sha256": "ded12cd57ab42a240e65c7255718bc53bec6e060feea3fa6b538de00ee597f61"
+  },
+  {
+    "file": "verdant_ruin_score.ogg",
+    "seconds": 36,
+    "channels": 2,
+    "sha256": "f874b2aae04cd625dd9dba715237126727c1bf0337ee5fba9f8e99d231eb996c"
+  },
+  {
+    "file": "obsidian_cathedral_score.ogg",
+    "seconds": 38,
+    "channels": 2,
+    "sha256": "98ba1035e0e43ee22ad8c012c9eb77ce60d05de351904809a73e98d6f10a96fa"
+  },
+  {
+    "file": "abyssal_deluge_score.ogg",
+    "seconds": 40,
+    "channels": 2,
+    "sha256": "41559233ccb55b1265c2c0c85de2ca975177f56debe13abc6f9cac93b7fe467f"
+  },
+  {
+    "file": "world_sunder_score.ogg",
+    "seconds": 42,
+    "channels": 2,
+    "sha256": "85bc5fa31af2ad09150007e3e2338306595ff9e196bbccfd75d0e3927275c6ff"
+  },
+  {
+    "file": "rune_apocalypse_score.ogg",
+    "seconds": 45,
+    "channels": 2,
+    "sha256": "9ff7e4c0fdfadb1bd20758ed9912902d117c15bd3e03d70fbc62f73aa69f3205"
+  }
+]

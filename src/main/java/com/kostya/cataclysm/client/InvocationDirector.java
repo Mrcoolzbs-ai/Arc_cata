@@ -8,14 +8,12 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.*;
 
-/** Authored timing for fifteen invocations, including six standalone films. Rendering only: the server's impact clock is untouched. */
+/** Authored timing for the nine ritual invocations. High-tier films use SpellFilm. Rendering only: the server's impact clock is untouched. */
 public final class InvocationDirector {
-    public static boolean supports(Spell spell){return spell.ordinal()<15;}
-    public static boolean epic(Spell spell){return spell.ordinal()>=9&&spell.ordinal()<15;}
+    public static boolean supports(Spell spell){return spell.ordinal()<9;}
     public static float theatre(ClientEffects.Fx f,float age){
         if(!ClientOptions.ASTRAL.get()||!supports(f.spell))return 0;
-        // High-tier films include their own impact/aftermath, then dissolve back to the real world.
-        double in=epic(f.spell)?24:42,out=epic(f.spell)?f.spell.impact+50:f.spell.impact-48;
+        double in=42,out=f.spell.impact-48;
         return (float)(ClientEffects.smooth((age-in)/32.)*(1-ClientEffects.smooth((age-out)/32.)));
     }
     public static double fov(ClientEffects.Fx f,float partial){

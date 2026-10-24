@@ -6,11 +6,7 @@
     "UV0",
     "Color"
   ],
-  "samplers": [
-    {
-      "name": "Sampler0"
-    }
-  ],
+  "samplers": [],
   "uniforms": [
     {
       "name": "ModelViewMat",
@@ -78,17 +74,6 @@
         0.0,
         0.0,
         0.0
-      ]
-    },
-    {
-      "name": "FxColor2",
-      "type": "float",
-      "count": 4,
-      "values": [
-        1.0,
-        1.0,
-        1.0,
-        1.0
       ]
     },
     {
