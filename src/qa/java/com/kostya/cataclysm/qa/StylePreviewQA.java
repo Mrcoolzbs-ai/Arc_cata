@@ -121,7 +121,7 @@ public final class StylePreviewQA {
      ClientOptions.FLASH.set(true);ClientOptions.GLITCH.set(true);ClientOptions.SHAKE.set(true);
      require(InvocationDirector.supports(Spell.STARFALL)&&InvocationDirector.supports(Spell.TECTONIC_RIFT)&&SpellFilm.epic(Spell.RUNE_APOCALYPSE)&&!InvocationDirector.supports(Spell.RUNE_APOCALYPSE)&&!InvocationDirector.supports(Spell.END_OF_ALL),"scope");
      ClientOptions.ASTRAL.set(false);require(InvocationDirector.theatre(f,150)==0,"astral opt-out ignored");ClientOptions.ASTRAL.set(true);
-     ClientOptions.CAMERA.set(false);require(ClientEffects.cinematic()==null,"camera opt-out ignored");ClientOptions.CAMERA.set(true);
+     SpellFilm.stop(f);f.scoreStarted=false;f.skipped=false;f.age=5;SpellFilm.audio(f);var scoreBefore=f.scoreSound;require(scoreBefore!=null,"film score did not start");f.age=f.spell.impact/2;ClientOptions.CAMERA.set(false);require(ClientEffects.cinematic()==null,"camera opt-out ignored");SpellFilm.audio(f);require(f.scoreSound==scoreBefore,"score stopped by camera toggle");ClientOptions.CAMERA.set(true);SpellFilm.audio(f);require(f.scoreSound==scoreBefore,"score restarted by camera toggle");ClientOptions.CAMERA.set(false);f.age=f.spell.impact+20;SpellFilm.audio(f);require(f.scoreSound==scoreBefore,"score stopped after impact with camera off");ClientOptions.CAMERA.set(true);System.out.println("SCORE_SURVIVES_CAMERA_TOGGLE "+f.spell.id+" same_instance=true");
      f.skipped=true;require(ClientEffects.cinematic()==null,"skip ignored");SpellFilm.audio(f);require(f.scoreSound==null&&!SpellFilm.running(),"film/score survived skip");
      System.out.println("STYLE_ALL_PASS (staged client visuals, all fifteen ordinary spells; no destructive-server claims)");m.stop();
     }

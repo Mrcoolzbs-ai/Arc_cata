@@ -1,4 +1,4 @@
-"""0.6.2 routing/resource regressions; actual GPU/client captures are a separate test."""
+"""0.6.2/0.6.3 routing/resource regressions; actual GPU/client captures are a separate test."""
 from pathlib import Path
 import json,hashlib,subprocess
 P=Path(__file__).resolve().parents[2];J=P/'src/main/java/com/kostya/cataclysm';R=P/'src/main/resources/assets/arcane_cataclysm'
@@ -10,6 +10,13 @@ assert 'Math.min(main.width,960)' in film and 'rh>540' in film
 assert 'ScreenEvent.Render.Post' in film and 'target.destroyBuffers()' in film
 assert 'if(SpellFilm.running())return null;' in client and '||SpellFilm.running())return;' in client
 assert 'SpellFilm.stop(f)' in client and 'SpellFilm.audio(f)' in client
+# 0.6.3: toggling the cinematic camera (C) must not silence a running film score.
+keep=film[film.index('boolean keep='):film.index('if(!active&&!keep)stop(f);')]
+assert 'CAMERA' not in keep and 'eligible' not in keep and 'f.skipped' in keep and 'EndCinematic.running()' in keep
+assert 'if(!active)stop(f);' not in film and 'f.age<=20' in film
+assert '&&f.scoreSound==null){sound(' in client
+assert 'SpellFilm.scorePlaying()' in (J/'mixin/MusicMixin.java').read_text()
+print('SCORE_CAMERA_TOGGLE_CONTRACT_PASS')
 assert 'HighTierWorldRenderer.draw(f,partial);return;' in world
 assert 'modelView.set(e.getModelViewMatrix())' in world and 'RenderSystem.restoreProjectionMatrix()' in world
 assert world.index('HighTierWorldRenderer.draw')<world.index('RitualRenderer.draw')

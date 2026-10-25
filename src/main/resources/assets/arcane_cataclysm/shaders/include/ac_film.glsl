@@ -15,6 +15,9 @@ out vec4 fragColor;
 const float PI=3.14159265359,TAU=6.28318530718;
 vec3 ro=vec3(0),rd=vec3(0),col=vec3(0),atmosphere=vec3(0),key=vec3(0),fill=vec3(0);
 float depth=100000.,p=0.,tm=0.;
+// 0.6.3 art direction: per-film sun/moon, sky palette, height fog and exposure.
+vec3 sunCol=vec3(1.1,.78,.47),zen=vec3(.03),hz=vec3(.2),ambCol=vec3(.3);
+float fogD=.0011,fogH=140.,expo=1.65,flash=0.,cloudLo=.45;
 float sat(float x){return clamp(x,0.,1.);}
 float ease(float a,float b,float x){return smoothstep(a,b,x);}
 float hash(float x){return fract(sin(x*127.13+9.7)*43758.5453);}
@@ -86,11 +89,21 @@ void glyph(vec3 center,vec3 normal,float radius,float angle,float power){
 // The heightfield is original terrain, not a captured Minecraft framebuffer.
 // One small shared texture lookup replaces nested procedural FBM in the primary marcher.
 vec3 sunDir=normalize(vec3(-.6,.38,-.55));
+// Height-integrated fog with forward sun scattering keeps distance readable without milk-white wash.
+vec3 aerial(vec3 c,float t){
+ float k=rd.y/fogH,base=fogD*exp(-max(ro.y,0.)/fogH);
+ float od=abs(k*t)<.001?base*t:base*(1.-exp(-k*t))/k;
+ od+=t*.00012+pow(t/2600.,4.);
+ float sun=max(0.,dot(rd,sunDir));
+ vec3 fc=mix(hz,atmosphere,.55)+sunCol*(pow(sun,6.)*.28+pow(sun,40.)*.35);
+ return mix(c,fc,1.-exp(-od));
+}
+vec3 skyLight(vec3 n){return mix(hz*.55+vec3(.02),zen*1.6+hz*.35,.5+.5*n.y)*ambCol;}
 float terrain(vec2 x){
  vec3 sampleHeight=textureLod(Landscape,clamp(x/4096.+.5,vec2(.002),vec2(.998)),0.).rgb;
  float h=sampleHeight.r*255.+sampleHeight.g-26.;
  float flattening=1.-smoothstep(110.,380.,length(x));
-#if FILM_ID != 12
+#if FILM_ID != 12 && FILM_ID != 13
  h=mix(h,5.+sin(x.x*.018)*sin(x.y*.021)*1.4,flattening);
 #endif
 
@@ -127,6 +140,12 @@ vec2 district(vec2 x){
 }
 float surface(vec2 x){
  float h=groundHeight(x);
+#if FILM_ID == 13
+ // Ridged basalt highlands: sharp crests, so the sundering cuts through real relief.
+ float r1=1.-abs(acNoise(vec3(x*.011,3.))*2.-1.),r2=1.-abs(acNoise(vec3(x*.034,7.))*2.-1.);
+ float rim=smoothstep(40.,160.,abs(fault(x)));
+ h+=(r1*r1*34.+r2*r2*9.-16.)*rim+acNoise(vec3(x*.12,1.))*2.2;
+#endif
 #if FILM_ID == 10
  if(length(x)>370.){
   vec2 cell=floor(x/23.),q=mod(x,23.)-11.5;float seed=acHash(vec3(cell,5.));
@@ -136,6 +155,37 @@ float surface(vec2 x){
  }
 #endif
  return h;
+}
+float terrainShadow(vec3 q){
+ float s=1.,t=1.5;
+ for(int i=0;i<24;i++){
+  vec3 x=q+sunDir*t;float d=x.y-surface(x.xz);s=min(s,9.*d/t);
+  if(s<.01)return 0.;t+=clamp(d*.6,1.5,45.)+t*.07;if(t>1000.)break;
+ }
+ return smoothstep(0.,1.,s);
+}
+// Sun occlusion by the same solid district boxes: streets and lower facades fall into shade.
+float cityShadow(vec3 o){
+#if FILM_ID == 9 || FILM_ID == 12 || FILM_ID == 14
+ vec3 d=sunDir;vec2 dir=d.xz+vec2(.000001),cell=floor((o.xz+14.)/28.);
+ vec2 stepDir=sign(dir),delta=abs(28./dir),next=((cell+step(vec2(0),dir))*28.-14.-o.xz)/dir;
+ vec3 inv=1./(d+vec3(.000001));
+ for(int i=0;i<12;i++){
+  vec2 x=cell*28.;float seed=acHash(vec3(cell,31.));
+  if(length(x)<580.&&seed>.15){
+   float hgt=district(x).x,w=7.+seed*3.;
+   if(hgt>1.){
+    vec3 size=vec3(w,hgt*.5,w),center=vec3(x.x,groundHeight(x)+hgt*.5,x.y);
+    vec3 a=(center-size-o)*inv,b=(center+size-o)*inv,lo=min(a,b),hi=max(a,b);
+    float t0=max(lo.x,max(lo.y,lo.z)),t1=min(hi.x,min(hi.y,hi.z));
+    if(t1>max(t0,.05))return 0.;
+   }
+  }
+  float tr;if(next.x<next.y){tr=next.x;next.x+=delta.x;cell.x+=stepDir.x;}else{tr=next.y;next.y+=delta.y;cell.y+=stepDir.y;}
+  if(tr>420.||o.y+d.y*tr>95.)break;
+ }
+#endif
+ return 1.;
 }
 // Exact grid traversal: each district is intersected as solid geometry. Heightfield
 // marching must never skip narrow vertical facades or create perforated skyscrapers.
@@ -155,21 +205,41 @@ void metropolis(){
    if(height>1.&&t>0.&&t<end&&t<depth){
     vec3 q=ro+rd*t,v=abs((q-center)/size),n;
     if(v.x>v.y&&v.x>v.z)n=vec3(sign(q.x-center.x),0,0);else if(v.y>v.z)n=vec3(0,sign(q.y-center.y),0);else n=vec3(0,0,sign(q.z-center.z));
-    vec3 mat=mix(vec3(.13,.16,.20),vec3(.28,.29,.29),seed);
-    float lit=.30+.70*max(0.,dot(n,sunDir));vec3 c=mat*lit;
-    if(n.y<.5){
-     vec2 wall=vec2(abs(n.x)>.5?q.z:q.x,q.y);vec2 win=fract(wall*vec2(.29,.32));
-     float windows=step(.20,win.x)*step(win.x,.65)*step(.27,win.y)*step(win.y,.75);
-     float on=step(.55,acHash(vec3(floor(wall*vec2(.29,.32)),seed*30.)));
-     c*=.6+.4*step(.12,win.y);c+=vec3(.48,.34,.16)*windows*on;
-     c+=vec3(.06,.085,.11)*windows*(1.-on);
+    // Three facade families: warm stone, pale concrete and dark glass towers.
+    float kind=acHash(vec3(cell,57.)),up=sat((q.y-base)/max(height,1.));
+    vec3 mat=kind<.38?mix(vec3(.30,.25,.20),vec3(.42,.35,.27),seed):kind<.72?mix(vec3(.30,.31,.32),vec3(.44,.44,.42),seed):vec3(.07,.09,.12);
+    bool glass=kind>=.72;
+    float footAO=.45+.55*sat((q.y-base)/14.);
+    float diff=max(0.,dot(n,sunDir));if(diff>0.)diff*=cityShadow(q+n*.06);
+    vec3 c=mat*(skyLight(n)*footAO+sunCol*diff*.95);
+    if(n.y>.5){
+     // Roofs: tar, parapet rim and the odd rooftop beacon on high towers.
+     vec2 r=abs(q.xz-center.xz)/size.xz;float rim=step(.90,max(r.x,r.y));
+     c=mix(vec3(.06,.06,.065),mat*.8,rim)*(skyLight(n)+sunCol*diff*.8);
+     c+=vec3(1.6,.12,.06)*step(.45,height/80.)*exp(-dot(q.xz-center.xz,q.xz-center.xz)*2.)*(.6+.4*sin(tm*3.+seed*40.));
+    }else{
+     vec2 wall=vec2(abs(n.x)>.5?q.z:q.x,q.y);vec2 cellw=floor(wall*vec2(.29,.32)),win=fract(wall*vec2(.29,.32));
+     float windows=step(.18,win.x)*step(win.x,.70)*step(.25,win.y)*step(win.y,.78);
+     float rnd=acHash(vec3(cellw,seed*30.)),on=step(.58,rnd);
+     vec3 warm=mix(vec3(1.,.62,.26),vec3(.75,.80,1.),step(.86,rnd));
+     vec3 rf=reflect(rd,n);vec3 env=mix(hz,zen*1.3+hz*.3,sat(rf.y*1.6))+sunCol*pow(max(0.,dot(rf,sunDir)),24.)*.8;
+     float fres=.04+.96*pow(1.-max(0.,dot(-rd,n)),5.);
+     if(glass){c=mix(c,env*.85,.35+.55*fres);c+=warm*windows*on*.55*(1.-ease(.82,1.05,p));
+      c*=.85+.15*step(.08,fract(wall.y*.32));}
+     else{
+      vec3 pane=mix(vec3(.025,.03,.04),env*.6,fres);
+      c=mix(c,pane,windows);c+=warm*windows*on*(.30+.30*rnd);
+      c*=.78+.22*step(.12,win.y);   // floor slab lines
+      c*=.88+.12*step(.06,abs(fract(wall.x*.29+.5)-.5)); // pilasters
+     }
+     c*=.9+.2*up; // light gradient towards the crown
     }
 #if FILM_ID == 9
     c+=vec3(.9,.16,.035)*exp(-abs(length(q.xz)-ease(.72,1.03,p)*900.)*.045)*ease(.7,.8,p);
 #elif FILM_ID == 14
     c+=vec3(1.4,.12,.36)*exp(-abs(q.z-mix(-700.,850.,ease(.5,1.06,p)))*.1);
 #endif
-    col=mix(c,atmosphere,1.-exp(-t*.0011-pow(t/1800.,4.)));depth=t;
+    col=aerial(c,t);depth=t;
    }
   }
   if(next.x<next.y){travel=next.x;next.x+=delta.x;cell.x+=stepDir.x;}else{travel=next.y;next.y+=delta.y;cell.y+=stepDir.y;}
@@ -177,32 +247,44 @@ void metropolis(){
  }
 }
 vec3 sky(int id){
- float horizon=pow(1.-max(0.,rd.y),4.);
- vec3 zenith=vec3(.025,.018,.035),haze=vec3(.19,.085,.085);
-#if FILM_ID == 10
- zenith=vec3(.045,.12,.15);haze=vec3(.45,.53,.39);
-#elif FILM_ID == 11
- zenith=vec3(.025,.018,.052);haze=vec3(.16,.12,.21);
-#elif FILM_ID == 12
- zenith=vec3(.012,.038,.06);haze=vec3(.12,.23,.27);
-#elif FILM_ID == 13
- zenith=vec3(.07,.045,.045);haze=vec3(.45,.28,.18);
-#elif FILM_ID == 14
- zenith=vec3(.022,.015,.04);haze=vec3(.26,.17,.25);
+ float y=max(rd.y,0.),horizon=pow(1.-y,5.);
+ vec3 c=mix(zen,hz,horizon);
+ c=mix(c,hz*.55,smoothstep(0.,-.25,rd.y));
+ float sun=max(0.,dot(rd,sunDir));
+ // Wide Mie glow + tight halo; the disk is per film (eclipsed in 10, moon in 12).
+ c+=sunCol*(pow(sun,5.)*.10+pow(sun,48.)*.30)*(1.-horizon*.3);
+#if FILM_ID != 9
+ float disk=smoothstep(.99955,.99975,sun);
+#if FILM_ID == 11
+ c=mix(c,vec3(.80,.86,1.05)*(.85+.15*acNoise(rd*900.)),disk);
+#else
+ c+=sunCol*disk*3.;
 #endif
- vec3 c=mix(zenith,haze,horizon*.88);
- float sun=max(0.,dot(rd,sunDir));c+=vec3(1.,.70,.39)*pow(sun,320.)*.9;
+#endif
+#if FILM_ID == 11 || FILM_ID == 14 || FILM_ID == 9
+ // Stars only above the haze layer.
+ vec3 sd=rd*260.;vec3 cell=floor(sd);float star=acHash(cell);
+ vec3 sp=fract(sd)-.5;float tw=.6+.4*sin(tm*3.+star*80.);
+ c+=vec3(.75,.8,1.)*step(.985,star)*exp(-dot(sp,sp)*60.)*smoothstep(.04,.35,rd.y)*tw*.9;
+#endif
+#if FILM_ID == 14
+ // Aurora curtains answer the court before the erasure.
+ float ax=rd.x/(rd.y+.25)*2.+tm*.02;
+ float curtain=pow(acNoise(vec3(ax*3.,tm*.05,1.)),3.)*smoothstep(.06,.3,rd.y)*(1.-smoothstep(.45,.9,rd.y));
+ c+=vec3(.75,.12,.55)*curtain*.55*ease(.05,.4,p)+vec3(.15,.5,.65)*pow(acNoise(vec3(ax*5.+3.,tm*.07,4.)),4.)*curtain*.6;
+#endif
  if(rd.y>0.){
-  vec2 cloud=rd.xz/(rd.y+.16)*1.1+vec2(tm*.003,0.);
-  float n=acFbm(vec3(cloud,6.));
-  float cover=smoothstep(.43,.77,n)*smoothstep(.0,.15,rd.y);
-  vec3 cloudLight=vec3(.10,.12,.15)+vec3(.38,.25,.16)*pow(sun,6.);
-  float rim=smoothstep(.53,.59,n)*(1.-smoothstep(.59,.64,n));
-  cloudLight+=vec3(.20,.16,.13)*rim;
-  c=mix(c,cloudLight,cover*.90);
-  // Broad shafts are atmospheric, not piles of additive geometry.
-  c+=vec3(.18,.13,.08)*pow(sun,28.)*(1.-n)*.5;
+  // Two-layer lit clouds: density plus one sun-offset sample for self-shadowed edges.
+  vec2 uvc=rd.xz/(rd.y+.12)*1.05+vec2(tm*.004,tm*.001);
+  float n=acFbm(vec3(uvc,6.)),ns=acFbm(vec3(uvc+sunDir.xz*.08,6.));
+  float cover=smoothstep(cloudLo,cloudLo+.3,n)*smoothstep(0.,.12,rd.y);
+  float lit=sat(.5+(n-ns)*5.);
+  vec3 dark=mix(zen,hz,.35)*.55,bright=hz*.85+sunCol*(.18+.55*pow(sun,4.));
+  vec3 cl=mix(dark,bright,lit);
+  cl+=sunCol*pow(sun,10.)*smoothstep(.45,.62,n)*(1.-smoothstep(.62,.75,n))*.9;
+  c=mix(c,cl,cover*.92);
  }
+ c+=vec3(1.,.9,.8)*flash*(.2+.8*smoothstep(-.1,.4,rd.y));
 atmosphere=c;
 #if FILM_ID == 9
  float fall=ease(.65,1.03,p);
@@ -229,22 +311,30 @@ void landscape(){
  }
  if(!hit)return;
  for(int k=0;k<6;k++){float mid=(old+t)*.5;vec3 q=ro+rd*mid;if(q.y>surface(q.xz))old=mid;else t=mid;}
- vec3 q=ro+rd*t;float eps=max(6.,t*.006),h=surface(q.xz);
- vec3 n=normalize(vec3(surface(q.xz-vec2(eps,0))-surface(q.xz+vec2(eps,0)),2.*eps,surface(q.xz-vec2(0,eps))-surface(q.xz+vec2(0,eps))));
+ vec3 q=ro+rd*t;float eps=max(4.,t*.005),h=surface(q.xz);
+ float hx0=surface(q.xz-vec2(eps,0)),hx1=surface(q.xz+vec2(eps,0)),hz0=surface(q.xz-vec2(0,eps)),hz1=surface(q.xz+vec2(0,eps));
+ vec3 n=normalize(vec3(hx0-hx1,2.*eps,hz0-hz1));
+ // Concavity occlusion from the same four samples: valleys and building feet darken.
+ float ao=clamp(1.-((hx0+hx1+hz0+hz1)*.25-h)/eps*.55,.30,1.);
  float grain=textureLod(Landscape,q.xz/4096.+.5,0.).b;
- float detail=acNoise(q*.68)*.65+acNoise(q*2.3)*.35;
- vec3 rock=mix(vec3(.13,.115,.10),vec3(.28,.25,.22),grain);
- vec3 grass=mix(vec3(.10,.16,.085),vec3(.24,.28,.13),grain);
- vec3 mat=mix(rock,grass,smoothstep(.55,.9,n.y))*(.55+detail*.8);
+ float near=exp(-t*.0018);
+ float detail=mix(.55,acNoise(q*.68)*.65+acNoise(q*2.3)*.35,near);
+ float macro=acNoise(vec3(q.xz*.006,2.)),strata=.5+.5*sin(q.y*.62+grain*7.+macro*4.);
+ vec3 rock=mix(vec3(.15,.13,.115),vec3(.32,.28,.24),grain)*(.75+.4*strata);
+ vec3 grass=mix(mix(vec3(.075,.15,.05),vec3(.20,.25,.08),macro),vec3(.25,.22,.10),grain*.45);
+ float flatness=smoothstep(.62,.88,n.y+(detail-.5)*.25);
+ vec3 mat=mix(rock,grass,flatness)*(.62+detail*.65);
 #if FILM_ID == 10
- float death=ease(.35,.95,p);mat=mix(mat,vec3(.16,.12,.075),death*.8);
+ float death=ease(.35,.95,p);mat=mix(mat,mix(vec3(.26,.19,.07),vec3(.13,.11,.09),ease(.75,1.,p))*(.7+grain*.6+macro*.3),death*.85);
  if(q.y>groundHeight(q.xz)+2.)mat=mix(vec3(.08,.17,.035),vec3(.15,.10,.055),death)*(.5+detail*.7);
 #elif FILM_ID == 11
  mat=mix(mat,vec3(.17,.13,.18),.5);
 #elif FILM_ID == 12
  mat=mix(mat,vec3(.12,.19,.20),.5);
 #elif FILM_ID == 13
- mat=mix(mat,vec3(.24,.15,.10),.6);
+ // Green highland turf on the flats, dark basalt with pale strata on every slope.
+ mat=mix(mat,vec3(.085,.08,.078)*(.6+.8*strata),(1.-flatness)*.85);
+ mat=mix(mat,vec3(.10,.13,.06)*(.7+detail*.6),flatness*.5);
 #endif
  vec3 emission=vec3(0.);
 #if FILM_ID == 9 || FILM_ID == 12 || FILM_ID == 14
@@ -261,19 +351,28 @@ void landscape(){
   }
  }
 #endif
- float shadow=1.;
- float diffuse=max(0.,dot(n,sunDir));
- vec3 light=vec3(.35,.43,.52)*(.32+.28*n.y)+vec3(1.1,.78,.47)*diffuse*(.15+.85*shadow);
+ float diffuse=max(0.,dot(n,sunDir)),shadow=diffuse>0.?terrainShadow(q+n*.6):0.;
+ if(shadow>0.&&t<900.)shadow*=cityShadow(q+n*.3);
+ vec3 light=skyLight(n)*ao+sunCol*diffuse*shadow*(.55+.45*ao);
  vec3 c=mat*light+emission;
+ c+=mat*hz*.25*max(0.,-n.y*.5+.3)*ao;
 #if FILM_ID == 13
  float width=ease(.28,.94,p)*65.;float f=abs(fault(q.xz));
  float seam=exp(-abs(f-width)*.13)*ease(.12,.6,p);
  float lava=(1.-smoothstep(width-5.,width+3.,f))*ease(.1,.6,p);
  float veins=smoothstep(.32,.66,acFbm(vec3(q.x*.09,q.z*.06,tm*.11)));
  float deep=1.-smoothstep(-170.,-70.,q.y);
- float cracks=pow(max(0.,sin(q.y*.45+acNoise(q*.12)*5.)),14.);
- c=mix(c,vec3(.10,.065,.045)*(.6+detail*.6),smoothstep(0.,1.,1.-n.y)*ease(.1,.6,p));
- c+=vec3(2.6,.30,.025)*(seam*.12+lava*deep*veins+lava*cracks*.07);
+ float cracks=pow(max(0.,sin(q.y*.45+acNoise(q*.12)*5.)),14.)*acNoise(q*.07);
+ // Chasm walls: banded basalt cliffs that heat up towards the magma below.
+ float below=terrain(q.xz)-q.y,wall=smoothstep(.35,.75,1.-n.y)*smoothstep(1.,6.,below);
+ float bands=.5+.5*sin(q.y*1.15+acNoise(q*.045)*7.),chip=acNoise(q*.35);
+ vec3 cliff=vec3(.055,.05,.05)*(.55+.9*bands*chip)*(skyLight(n)*.9+sunCol*diffuse*shadow*.6);
+ cliff+=vec3(1.7,.34,.05)*(pow(sat(below/150.),2.2)*.55+cracks*sat(below/30.)*2.2);
+ c=mix(c,cliff,wall*ease(.1,.45,p));
+ c+=vec3(2.6,.30,.025)*(seam*.05*(1.-wall)+lava*deep*veins);
+#endif
+#if FILM_ID == 13
+ c+=vec3(1.6,.36,.06)*exp(-max(0.,f-width)*.05)*ease(.15,.6,p)*.9*max(0.,n.y)*mat*step(width-2.,f);
 #endif
 #if FILM_ID == 9
  float ring=exp(-pow((length(q.xz)-ease(.72,1.03,p)*900.)/18.,2.))*ease(.7,.8,p);
@@ -284,29 +383,32 @@ void landscape(){
  float line=exp(-abs(q.z-front)*.13);c+=vec3(2.,.3,.65)*line;
  c*=mix(.12,1.,ease(front-20.,front+20.,q.z));
 #endif
- col=mix(c,fogColor(),1.-exp(-t*.0011-pow(t/1800.,4.)));depth=t;
+ col=aerial(c,t);depth=t;
 }
 // Coarse lobes plus fine leaf clusters displace the silhouette itself. This is not
 // a smooth sphere with green noise painted on it. Every leaf volume remains bounded.
 float leafField(vec3 q,vec3 center,float r){
  vec3 v=q-center;
  float broad=acNoise(q*.23),fine=acNoise(q*1.15);
- return length(v)-r*(.78+.18*(broad-.5)+.025*(fine-.5));
+ float lobes=acNoise(q*(2.6/max(r,1.)));
+ return length(v)-r*(.70+.30*(broad-.5)+.22*(lobes-.5)+.05*(fine-.5));
 }
 void canopy(vec3 center,float r,float dead){
  vec3 o=ro-center;float b=dot(o,rd),h=b*b-dot(o,o)+r*r;if(h<0.)return;
  float t=max(.01,-b-sqrt(h)),end=min(depth,-b+sqrt(h));if(t>end)return;
- for(int k=0;k<25;k++){
+ for(int k=0;k<40;k++){
   vec3 q=ro+rd*t;float d=leafField(q,center,r);
   if(d<.055){
    vec2 e=vec2(.12,0);vec3 n=normalize(vec3(leafField(q+e.xyy,center,r)-leafField(q-e.xyy,center,r),leafField(q+e.yxy,center,r)-leafField(q-e.yxy,center,r),leafField(q+e.yyx,center,r)-leafField(q-e.yyx,center,r)));
    float local=acNoise(q*.9),lit=max(0.,dot(n,sunDir));
    vec3 c=mix(vec3(.04,.10,.02),vec3(.13,.23,.045),local);
-   c=mix(c,vec3(.14,.095,.045),dead*.9)*(.35+lit*.9);
+   float occl=.55+.45*sat(dot(normalize(q-center),n)*.5+.5+(local-.5)*.6);
+   vec3 autumn=mix(mix(vec3(.42,.30,.04),vec3(.50,.13,.03),local),vec3(.16,.10,.05),sat(dead*2.-1.));
+   c=mix(c,autumn,sat(dead*1.6))*(skyLight(n)*occl*1.3+sunCol*lit*.85);
    float back=pow(max(0.,dot(rd,sunDir)),4.);c+=vec3(.14,.20,.045)*back*(1.-dead);
-   col=mix(c,atmosphere,1.-exp(-t*.0011-pow(t/1800.,4.)));depth=t;return;
+   col=aerial(c,t);depth=t;return;
   }
-  t+=max(.055,d*.55);if(t>end)return;
+  t+=max(.05,d*.5);if(t>end)return;
  }
 }
 #if FILM_ID == 9
@@ -339,7 +441,11 @@ void life(){
   float y=terrain(x),ht=20.+hash(k+5.)*26.;
   branch(vec3(x.x,y,x.y),vec3(x.x,y+ht,x.y),1.4,wood);
   float local=ease(.3+r*.0005,.72+r*.0005,p);
-  if(local<.98)canopy(vec3(x.x,y+ht,x.y),ht*.35*(1.-local*.8),local);
+  // Every forest tree carries a real crown of limbs, so bare winter trunks are not sticks.
+  for(int j=0;j<3;j++){float a3=k*1.7+float(j)*2.094;vec3 top=vec3(x.x,y+ht*(.72+.1*float(j)),x.y);
+   branch(top,top+vec3(cos(a3)*ht*.28,ht*.30,sin(a3)*ht*.28),.42,wood);}
+  if(local<.98){float cr=ht*.35*(1.-local*.8);canopy(vec3(x.x,y+ht,x.y),cr,local);
+   canopy(vec3(x.x+cr*.55*cos(k),y+ht-cr*.55,x.y+cr*.55*sin(k)),cr*.72,local);}
  }
  branch(vec3(0,5.,0),vec3(5.,90.-fall*40.,3.),6.,wood);
  branch(vec3(5.,70.-fall*20.,3.),vec3(-2.,143.-fall*95.,0),3.2,wood);
@@ -419,7 +525,7 @@ void cathedral(){
    windows*=.55+.45*acNoise(q*.33);
    c+=mix(vec3(.16,.12,.42),vec3(.68,.24,.10),acNoise(q*.15))*windows*(.8+ease(.3,.8,p));
    c+=vec3(.65,.31,.12)*exp(-length((q-vec3(0,22,80)).xz)*.03)*ease(.3,.8,p)*.3;
-   col=mix(c,fogColor(),1.-exp(-t*.0011-pow(t/1800.,4.)));depth=t;break;
+   col=aerial(c,t);depth=t;break;
   }t+=max(.08,d*.7);
  }
  for(int k=0;k<6;k++)for(int side=-1;side<=1;side+=2){
@@ -427,6 +533,7 @@ void cathedral(){
   box(at,vec3(4.,4.,4.),vec3(.14,.14,.16),0.);
   box(at+vec3(0,8.,0),vec3(1.5,6.,1.5),vec3(.12,.12,.15),0.);
   sphere(at+vec3(0,15.,0),1.1,vec3(.30,.17,.06),.20*ease(.12,.4,p));
+  beam(at+vec3(0,15.,0),at+vec3(0,15.01,0),1.2,vec3(1.,.55,.22),.35*ease(.12,.4,p));
  }
  float gate=ease(.32,.68,p),sentence=ease(.72,1.,p);
  for(int side=-1;side<=1;side+=2)box(vec3(float(side)*(7.5+gate*17.),26.+structureY,-61.),vec3(7.2,19.,1.1),vec3(.16,.10,.20),.03);
@@ -480,8 +587,10 @@ void abyss(){
   float foam=ease(90.,160.,q.y)*smoothstep(.44,.67,crestNoise);
   foam+=pow(max(0.,crestNoise-.45)*2.,2.)*ease(40.,150.,q.y)*.3;
   vec3 c=mix(vec3(.004,.025,.055),vec3(.12,.22,.25),fres)+vec3(.9,.73,.48)*spec*.7;
-  c=mix(c,vec3(.56,.71,.70),foam*.9);c+=vec3(.012,.065,.08)*max(0.,n.y);
-  col=mix(c,fogColor(),1.-exp(-t*.0011-pow(t/1800.,4.)));depth=t;
+  float sss=pow(max(0.,dot(rd,sunDir)),2.)*ease(15.,130.,q.y)*(1.-foam);
+  c+=vec3(.03,.30,.26)*sss*.8+vec3(.01,.08,.07)*ease(30.,150.,q.y);
+  c=mix(c,vec3(.62,.74,.74)*(.6+.5*max(0.,dot(n,sunDir))),foam*.9);c+=vec3(.012,.065,.08)*max(0.,n.y);
+  col=aerial(c,t);depth=t;
  }
  float under=ease(.88,1.03,p);col=mix(col,vec3(.006,.065,.095),under*.72);
 }
@@ -490,7 +599,7 @@ void abyss(){
 void apocalypse(){
  float law=ease(.08,.44,p),erase=ease(.5,1.06,p);
  // A suspended court spans the city, with one travelling erasure plane.
- glyph(vec3(0,240,0),vec3(0,1,0),290.,tm*.015,law*.8);
+ glyph(vec3(0,240,0),vec3(0,1,0),290.,tm*.015,law*.38);
  for(int k=0;k<7;k++){
   float a=float(k)*TAU/7.;vec3 v=vec3(cos(a)*330.,140.+sin(float(k))*25.,sin(a)*330.);
   box(v,vec3(7.,55.,5.),vec3(.12,.08,.15),law*.04);
@@ -500,10 +609,66 @@ void apocalypse(){
  if(t>0.&&t<depth){vec3 q=ro+rd*t;float f=exp(-abs(q.y-50.)*.012)*law;col+=vec3(.40,.055,.14)*f*.3;}
 }
 #endif
+// Drifting embers/pollen/dust/spray: a few world-space cells sampled along the view ray.
+vec3 motes(vec3 tint,float cellSize,vec3 drift,float amount,float size){
+ vec3 acc=vec3(0.);
+ for(int i=0;i<7;i++){
+  float d=5.*pow(1.65,float(i));if(d>depth)break;
+  float c=cellSize*pow(1.45,float(i));
+  vec3 off=drift*tm;vec3 q=ro+rd*d+off;vec3 id=floor(q/c);
+  vec3 h=vec3(acHash(id),acHash(id+7.13),acHash(id+3.37));
+  if(h.x>amount)continue;
+  vec3 pt=(id+.15+.7*h)*c-off;pt+=vec3(sin(tm*.9+h.y*30.),cos(tm*.7+h.z*20.),sin(tm*.6+h.x*40.))*c*.08;
+  vec3 w=pt-ro;float along=dot(w,rd);if(along<=.5||along>depth)continue;
+  float dist=length(w-rd*along),r=max(size,along*1.6/FxScreen.y);
+  acc+=tint*exp(-dist*dist/(r*r))*min(1.,size/r*1.6+.25)*(.55+.45*sin(tm*4.+h.z*60.));
+ }
+ return acc;
+}
+vec3 atmosphereMotes(){
+#if FILM_ID == 9
+ return motes(vec3(2.2,.55,.12),9.,vec3(.6,2.2,.3),.55,.10)*ease(.3,.7,p);
+#elif FILM_ID == 10
+ float wither=ease(.35,.95,p);
+ return motes(mix(vec3(1.2,1.1,.45),vec3(1.1,.35,.08),wither),7.,vec3(.4,mix(.25,-1.4,wither),.2),mix(.5,.8,wither),mix(.07,.12,wither));
+#elif FILM_ID == 11
+ return motes(vec3(.75,.55,1.4),8.,vec3(.1,.35,.1),.4,.06);
+#elif FILM_ID == 12
+ return motes(vec3(.45,.6,.65),6.,vec3(1.5,-.4,.8),.45*ease(.2,.6,p),.05);
+#elif FILM_ID == 13
+ return motes(vec3(2.4,.6,.12),9.,vec3(.8,3.,.4),.6,.12)*ease(.15,.5,p);
+#else
+ return motes(vec3(1.4,.5,1.0),9.,vec3(0.,1.2,0.),.5,.08)*ease(.05,.4,p);
+#endif
+}
 vec3 story(vec2 uv,int id){
  p=FxParams.y;tm=FxTime;
  key=id==9?vec3(1.6,.5,.3):id==10?vec3(.40,1.1,.45):id==11?vec3(.85,.40,1.5):id==12?vec3(.12,.65,.85):id==13?vec3(1.8,.65,.12):vec3(1.5,.48,.68);
  fill=id==9?vec3(.30,.20,.29):id==10?vec3(.24,.35,.28):id==11?vec3(.29,.22,.40):id==12?vec3(.16,.32,.40):id==13?vec3(.40,.25,.20):vec3(.35,.18,.30);
+ // Per-film art direction (sun/moon, palette, fog, exposure).
+#if FILM_ID == 9
+ sunDir=normalize(vec3(.12,.30,1.));sunCol=vec3(1.30,.55,.32);zen=vec3(.020,.012,.028);hz=vec3(.34,.12,.09);
+ ambCol=vec3(.55,.62,1.05);fogD=.0011;fogH=120.;expo=1.5;cloudLo=.42;
+#elif FILM_ID == 10
+ float wither=ease(.35,.95,p);
+ sunDir=normalize(vec3(-.72,mix(.26,.13,wither),.64));sunCol=mix(vec3(1.55,1.05,.58),vec3(1.25,.55,.30),wither);
+ zen=mix(vec3(.08,.19,.36),vec3(.09,.06,.12),wither);hz=mix(vec3(.80,.64,.42),vec3(.58,.36,.27),wither);
+ ambCol=vec3(.9);fogD=.0016;fogH=90.;expo=1.45;cloudLo=.47;
+#elif FILM_ID == 11
+ sunDir=normalize(vec3(.42,.34,.84));sunCol=vec3(.42,.50,.80);zen=vec3(.006,.008,.026);hz=vec3(.075,.07,.13);
+ ambCol=vec3(1.1,1.05,1.3);fogD=.0035;fogH=26.;expo=2.1;cloudLo=.50;
+#elif FILM_ID == 12
+ sunDir=normalize(vec3(.30,.16,1.));sunCol=vec3(1.35,.86,.55);zen=vec3(.035,.065,.10);hz=vec3(.36,.40,.42);
+ ambCol=vec3(.85,.95,1.05);fogD=.0013;fogH=120.;expo=1.5;cloudLo=.38;
+ // Distant storm lightning, never a full-frame white flash.
+ float bolt=fract(tm*.37);flash=FxParams.w*step(.5,p)*exp(-bolt*40.)*step(.55,hash(floor(tm*.37)))*.25;
+#elif FILM_ID == 13
+ sunDir=normalize(vec3(-.55,.30,.78));sunCol=vec3(1.30,.88,.62);zen=vec3(.045,.05,.075);hz=vec3(.27,.23,.23);
+ ambCol=vec3(.65,.72,.95);fogD=.0009;fogH=150.;expo=1.5;cloudLo=.38;
+#else
+ sunDir=normalize(vec3(.38,.14,.92));sunCol=vec3(.95,.55,.70);zen=vec3(.008,.008,.032);hz=vec3(.13,.085,.17);
+ ambCol=vec3(.70,.75,1.05);fogD=.0012;fogH=110.;expo=1.6;cloudLo=.48;
+#endif
  int shot=p<.18?0:p<.38?1:p<.62?2:p<.84?3:p<1.?4:5;
  float u=shot==0?p/.18:shot==1?(p-.18)/.20:shot==2?(p-.38)/.24:shot==3?(p-.62)/.22:shot==4?(p-.84)/.16:(p-1.)/.13;u=sat(u);
  vec3 eye=vec3(0),look=vec3(0);float lens=1.3;
@@ -570,15 +735,29 @@ vec3 story(vec2 uv,int id){
  abyss();
 #elif FILM_ID == 14
  apocalypse();
+#elif FILM_ID == 13
+ // Heat haze: a short emissive march above the fault, so the wound lights the air.
+ {float open=ease(.28,.94,p)*65.,g=0.;
+  for(int i=0;i<14;i++){float d=(float(i)+.5)*min(depth,1400.)/14.;vec3 x=ro+rd*d;
+   float f=abs(fault(x.xz));g+=exp(-max(0.,f-open*.85)*.07)*exp(-max(0.,x.y-groundHeight(x.xz))*.02)*step(4.,open)*(.6+.4*acNoise(x*.02+vec3(0,-tm*.6,0)));}
+  col+=vec3(1.3,.30,.05)*g/14.*ease(.3,.7,p)*.28;}
 #endif
- // Light aerial haze and filmic shoulder preserve highlights without a white flash.
- col+=fill*exp(-abs(rd.y)*16.)*.035;
- return pow(film(col*1.65),vec3(.90));
+ col+=atmosphereMotes();
+ // Filmic shoulder, then a gentle grade: contrast S-curve, saturation, split toning.
+ vec3 g=pow(film(col*expo),vec3(.92));
+ float l=dot(g,vec3(.2126,.7152,.0722));
+ g=mix(vec3(l),g,1.18);
+ g=mix(g,g*g*(3.-2.*g),.30);
+ g+=(1.-l)*(1.-l)*fill*.035-l*l*vec3(0.,.01,.025);
+ return clamp(g,0.,1.);
 }
 void main(){
  vec2 uv=(texCoord-.5)*vec2(FxScreen.x/FxScreen.y,1.);uv.y=-uv.y;
  vec3 scene=story(uv,FILM_ID);
  float endFade=1.-smoothstep(75.,100.,FxImpact.x),openFade=smoothstep(0.,.7,FxTime);
- scene*=openFade*endFade*(1.-.12*smoothstep(.3,1.2,length(uv)));
+ float vig=1.-.32*smoothstep(.35,1.25,length(uv*vec2(.85,1.15)));
+ float grain=(acHash(vec3(texCoord*FxScreen,floor(FxTime*24.)))-.5)*.022;
+ scene=scene*vig+grain*(.4+scene);
+ scene*=openFade*endFade;
  fragColor=vec4(scene,1.)*ColorModulator;
 }

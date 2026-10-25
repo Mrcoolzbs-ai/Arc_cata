@@ -32,14 +32,20 @@ public final class SpellFilm {
     public static boolean running(){return current()!=null&&!EndCinematic.running();}
     public static void audio(ClientEffects.Fx f){
         var m=Minecraft.getInstance();boolean active=!EndCinematic.running()&&eligible(f)&&ClientEffects.cinematic()==f;
-        if(active&&!f.scoreStarted){
+        if(active&&!f.scoreStarted&&f.age<=20){
             f.scoreStarted=true;m.getMusicManager().stopPlaying();
             if(f.chargeSound!=null)m.getSoundManager().stop(f.chargeSound);
             f.scoreSound=new SimpleSoundInstance(Cataclysm.id(f.spell.id+"_score"),SoundSource.RECORDS,.85f,1f,RandomSource.create(),false,0,SoundInstance.Attenuation.NONE,0,0,0,true);
             m.getSoundManager().play(f.scoreSound);
         }
-        if(!active)stop(f);
+        // The score belongs to the cast, not to the camera mode: toggling the cinematic
+        // camera (C) mid-film only swaps the picture back to the real world. Only skip,
+        // End of All, spectator mode or the natural end of the film stop the music.
+        boolean keep=f.scoreSound!=null&&!f.skipped&&!EndCinematic.running()&&f.age<f.spell.impact+100
+            &&m.player!=null&&!m.player.isSpectator();
+        if(!active&&!keep)stop(f);
     }
+    public static boolean scorePlaying(){for(var f:ClientEffects.ACTIVE)if(f.scoreSound!=null)return true;return false;}
     public static void stop(ClientEffects.Fx f){if(f.scoreSound!=null)Minecraft.getInstance().getSoundManager().stop(f.scoreSound);f.scoreSound=null;}
     @SubscribeEvent public static void logout(ClientPlayerNetworkEvent.LoggingOut e){if(target!=null){target.destroyBuffers();target=null;}}
     public static void layer(GuiGraphics g,DeltaTracker tracker){if(Minecraft.getInstance().screen==null)render(g,tracker.getGameTimeDeltaPartialTick(false));}

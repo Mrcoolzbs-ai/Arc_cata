@@ -5,7 +5,7 @@ This complements, and does not replace, a Minecraft client run.
 import moderngl as gl,numpy as np,time,sys
 from pathlib import Path
 from PIL import Image
-P=Path(__file__).resolve().parents[2]/'src/main/resources/assets/arcane_cataclysm';out=Path('previews/cinematic-0.6.2/frames');out.mkdir(parents=True,exist_ok=True)
+P=Path(__file__).resolve().parents[2]/'src/main/resources/assets/arcane_cataclysm';out=Path('previews/cinematic-0.6.3/frames');out.mkdir(parents=True,exist_ok=True)
 ctx=gl.create_standalone_context(backend='egl');print(ctx.info['GL_RENDERER'],flush=True)
 common=(P/'shaders/include/ac_common.glsl').read_text();film=(P/'shaders/include/ac_film.glsl').read_text().replace('#moj_import <arcane_cataclysm:ac_common.glsl>',common)
 vs='''#version 330

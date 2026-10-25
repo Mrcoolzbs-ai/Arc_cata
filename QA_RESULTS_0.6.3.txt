@@ -1,0 +1,27 @@
+Arcane Cataclysm 0.6.3-cinematic-polish — QA results (2026-10-25 UTC)
+Minecraft 1.21.1, NeoForge 21.1.264, Java 21, Linux/Xvfb/Mesa llvmpipe (software GL, not an FPS benchmark)
+
+Client (./gradlew runClient -Pstyleqa -Pstylefrom=9):
+STYLE_SCENE_PASS spell=last_cataclysm frames=19
+STYLE_SCENE_PASS spell=verdant_ruin frames=19
+STYLE_SCENE_PASS spell=obsidian_cathedral frames=19
+STYLE_SCENE_PASS spell=abyssal_deluge frames=19
+STYLE_SCENE_PASS spell=world_sunder frames=19
+STYLE_SCENE_PASS spell=rune_apocalypse frames=19
+SCORE_SURVIVES_CAMERA_TOGGLE rune_apocalypse same_instance=true
+STYLE_ALL_PASS
+Shader load errors: none
+
+Contracts:
+IMPACT_DYNAMICS_PASS checks=58881
+VISUAL_CONTRACT_PASS
+SCORE_CAMERA_TOGGLE_CONTRACT_PASS
+FILM_CONTRACT_PASS
+
+Offline EGL preview: 6 films x 6 shots rendered at 960x540 -> previews/cinematic-0.6.3/
+
+Release (clean build, no QA flags):
+RELEASE_JAR_PASS arcane_cataclysm-0.6.3-cinematic-polish.jar no_QA=true films=6 scores=6 End_resources=unchanged
+SHA-256 4af4b05750e658de2f1366966e0c8e7e8e09d4549b5ad4926eeea98f519fdf19
+
+Not re-verified: destructive server casts, multiplayer, real GPUs/FPS, audible playback (headless null audio device).

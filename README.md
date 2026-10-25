@@ -43,3 +43,8 @@ python3 tools/tests/test_film_contract.py
 Подробности: [TESTING.md](TESTING.md), [CINEMATICS_0.6.2.md](docs/CINEMATICS_0.6.2.md). История 0.6.1 сохранена в [docs/README_0.6.1.md](docs/README_0.6.1.md). Генераторы: `tools/generate_cinematic_terrain.py`, `tools/generate_v062_scores.py`. Происхождение инструментов и лицензия — [docs/third-party/MUSIC_SOURCES.md](docs/third-party/MUSIC_SOURCES.md).
 
 Кадры: [обзор шести фильмов](previews/cinematic-0.6.2/overview.jpg). Музыка: [по 8 секунд из каждой новой аранжировки](previews/cinematic-0.6.2/ensemble-sampler-10-15.mp3). Это обзор ключевых кадров и музыкальных фрагментов, не запись полного игрового прогона.
+
+## 0.6.3 — cinematic polish
+
+- Fix: the film score no longer cuts out when the cinematic camera (C) is toggled mid-film.
+- Films 10–15: new lighting, shadows, atmosphere, materials, particles and grade; World Sunder rebuilt as highlands with a basalt chasm. Details: [docs/CINEMATICS_0.6.3.md](docs/CINEMATICS_0.6.3.md). Frames: [before/after](previews/cinematic-0.6.3/before-after.jpg), [overview](previews/cinematic-0.6.3/overview.jpg).

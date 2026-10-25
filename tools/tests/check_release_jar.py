@@ -19,7 +19,7 @@ with zipfile.ZipFile(jar) as z:
   if f.is_file():assert z.read(str(f.relative_to(P/'src/main/resources')))==f.read_bytes(), 'stale resource: '+str(f)
  records=json.loads(z.read(prefix+'sounds/audio_v062_manifest.json'))
  for item in records:assert hashlib.sha256(z.read(prefix+'sounds/'+item['file'])).hexdigest()==item['sha256']
- for item in json.loads((P/'docs/UNCHANGED_0.6.2.json').read_text())['unchanged']:
+ for item in json.loads((P/'docs/UNCHANGED_0.6.3.json').read_text())['unchanged']:
   if '/resources/' in item['file']:
    path=item['file'].split('/resources/',1)[1];assert hashlib.sha256(z.read(path)).hexdigest()==item['sha256']
 print('RELEASE_JAR_PASS',jar.name,'bytes='+str(jar.stat().st_size),'no_QA=true films=6 scores=6 End_resources=unchanged')

@@ -56,7 +56,7 @@ public final class ClientEffects {
         for(var it=ACTIVE.iterator();it.hasNext();){
             Fx f=it.next();f.age++;SpellFilm.audio(f);
             if(f.age==f.spell.impact){if(f.chargeSound!=null)m.getSoundManager().stop(f.chargeSound);f.soundDelay=(int)Math.min(40,m.player.position().distanceTo(f.packet.target())/17);}
-            if(f.soundDelay>=0 && f.soundDelay--==0&&!SpellFilm.eligible(f)){sound(f.spell.id+"_impact",.9f,1f);}
+            if(f.soundDelay>=0 && f.soundDelay--==0&&f.scoreSound==null){sound(f.spell.id+"_impact",.9f,1f);}
             if(f.age>f.spell.duration){SpellFilm.stop(f);if(f.chargeSound!=null)m.getSoundManager().stop(f.chargeSound);it.remove();}
         }
     }
