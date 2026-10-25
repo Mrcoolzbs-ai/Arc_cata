@@ -1,0 +1,130 @@
+[
+  {
+    "file": "last_cataclysm_score.ogg",
+    "seconds": 34,
+    "channels": 2,
+    "notes": 246,
+    "parts": [
+      "French horns",
+      "cellos",
+      "choir",
+      "double bass",
+      "harp",
+      "oboe",
+      "orchestral percussion",
+      "pizzicato strings",
+      "timpani",
+      "trombones",
+      "tubular bells",
+      "violins/violas"
+    ],
+    "sha256": "b2fbf5d1e476f01a3a927f9249de774606ac0df01458bfd0c97912f07bf251d6"
+  },
+  {
+    "file": "verdant_ruin_score.ogg",
+    "seconds": 36,
+    "channels": 2,
+    "notes": 249,
+    "parts": [
+      "French horns",
+      "cellos",
+      "choir",
+      "double bass",
+      "flute",
+      "harp",
+      "oboe",
+      "orchestral percussion",
+      "pizzicato strings",
+      "timpani",
+      "trombones",
+      "tubular bells",
+      "violins/violas"
+    ],
+    "sha256": "8c9c1a8126f96adddb8defe170aa777f3d2fdf80ba3e5f523a5ddaba5b819be3"
+  },
+  {
+    "file": "obsidian_cathedral_score.ogg",
+    "seconds": 38,
+    "channels": 2,
+    "notes": 246,
+    "parts": [
+      "French horns",
+      "cellos",
+      "choir",
+      "double bass",
+      "flute",
+      "harp",
+      "oboe",
+      "orchestral percussion",
+      "pizzicato strings",
+      "timpani",
+      "trombones",
+      "tubular bells",
+      "violins/violas"
+    ],
+    "sha256": "0e99de636384259bd93e1447c8736c582dbae7f37cb973cc3be02947aa630f84"
+  },
+  {
+    "file": "abyssal_deluge_score.ogg",
+    "seconds": 40,
+    "channels": 2,
+    "notes": 246,
+    "parts": [
+      "French horns",
+      "cellos",
+      "choir",
+      "double bass",
+      "harp",
+      "oboe",
+      "orchestral percussion",
+      "pizzicato strings",
+      "timpani",
+      "trombones",
+      "tubular bells",
+      "violins/violas"
+    ],
+    "sha256": "324073fa6d393b128682e1f84aba4fa3d9d303e5147e45491b939a6cfc497e77"
+  },
+  {
+    "file": "world_sunder_score.ogg",
+    "seconds": 42,
+    "channels": 2,
+    "notes": 262,
+    "parts": [
+      "French horns",
+      "cellos",
+      "choir",
+      "double bass",
+      "harp",
+      "oboe",
+      "orchestral percussion",
+      "pizzicato strings",
+      "timpani",
+      "trombones",
+      "tubular bells",
+      "violins/violas"
+    ],
+    "sha256": "d1ba9e3cf8c68cf36f740f258279285f9f56473b481b2c12266ba57443a0bcd4"
+  },
+  {
+    "file": "rune_apocalypse_score.ogg",
+    "seconds": 45,
+    "channels": 2,
+    "notes": 246,
+    "parts": [
+      "French horns",
+      "cellos",
+      "choir",
+      "double bass",
+      "harp",
+      "oboe",
+      "orchestral percussion",
+      "pizzicato strings",
+      "timpani",
+      "trombones",
+      "tubular bells",
+      "violins/violas"
+    ],
+    "sha256": "0acb59e1068bb87047d066688ac63a6681b8474e0d0022e92a04d1b4ebd59b23"
+  }
+]

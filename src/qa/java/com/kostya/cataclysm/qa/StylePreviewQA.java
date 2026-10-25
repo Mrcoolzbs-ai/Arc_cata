@@ -108,9 +108,9 @@ public final class StylePreviewQA {
  @SubscribeEvent public static void after(RenderFrameEvent.Post e){
   if(!enabled()||scene<0||scene>=15||ClientEffects.ACTIVE.isEmpty())return;
   var m=Minecraft.getInstance();if(m.level==null||m.screen!=null||m.getOverlay()!=null)return;
-  boolean movie=Boolean.getBoolean("ac.stylemovie");if(!movie&&++hold<3)return;hold=0;
+  boolean movie=Boolean.getBoolean("ac.stylemovie");if(!movie&&++hold<1)return;hold=0;
   try{
-   Path dir=Path.of(Boolean.getBoolean("ac.styleworld")?"qa/world061":Boolean.getBoolean("ac.stylecompact")?"qa/style-compact":Boolean.getBoolean("ac.styleimpactmovie")?"qa/impact-movie":movie?"qa/style-movie":"qa/style-shots");Files.createDirectories(dir);
+   Path dir=Path.of(Boolean.getBoolean("ac.styleworld")?"qa/world061":Boolean.getBoolean("ac.stylecompact")?"qa/style-compact":Boolean.getBoolean("ac.styleimpactmovie")?"qa/impact-movie":movie?"qa/style-movie":"qa/style062");Files.createDirectories(dir);
    String file=movie?String.format("%05d.png",globalFrame++):String.format("%02d-%s-%02d-age-%03d.png",scene,Spell.values()[scene].id,frame,age());
    try(var image=Screenshot.takeScreenshot(m.getMainRenderTarget())){image.writeToFile(dir.resolve(file));}
    frame++;

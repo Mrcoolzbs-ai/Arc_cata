@@ -1,7 +1,8 @@
 #moj_import <arcane_cataclysm:ac_common.glsl>
-// Six self-contained films. All geometry is procedural and isolated from the real Minecraft world.
+// Six authored, kilometre-scale environments isolated from the real Minecraft world.
 // Catalogue ids 9..14; FxParams.y is server-catalogue impact-normalized client age.
 // No sampled world framebuffer: this layer is an opaque independent film.
+uniform sampler2D Landscape;
 uniform vec4 ColorModulator;
 uniform vec4 FxParams;
 uniform vec4 FxColor2;
@@ -12,7 +13,7 @@ in vec2 texCoord;
 in vec4 vertexColor;
 out vec4 fragColor;
 const float PI=3.14159265359,TAU=6.28318530718;
-vec3 ro=vec3(0),rd=vec3(0),col=vec3(0),key=vec3(0),fill=vec3(0);
+vec3 ro=vec3(0),rd=vec3(0),col=vec3(0),atmosphere=vec3(0),key=vec3(0),fill=vec3(0);
 float depth=100000.,p=0.,tm=0.;
 float sat(float x){return clamp(x,0.,1.);}
 float ease(float a,float b,float x){return smoothstep(a,b,x);}
@@ -81,320 +82,503 @@ void glyph(vec3 center,vec3 normal,float radius,float angle,float power){
  float spokes=pow(max(0.,cos(a*8.)),90.)*ease(.1,.2,r)*(1.-ease(.60,.65,r));
  col+=key*(ring*.7+ticks*.5+runes+spokes*.6)*power;
 }
-vec3 sky(int id){
- vec3 c=mix(vec3(.006,.012,.026),fill*.13,ease(-.3,.3,-rd.y));
- float neb=acFbm(rd*5.+vec3(0,tm*.008,7));c+=fill*pow(neb,3.)*.13;
- float horizon=exp(-abs(rd.y+.04)*12.);c+=fill*horizon*.10;
- vec3 cell=floor(rd*180.),f=fract(rd*180.)-.5;float star=step(.985,acHash(cell))*pow(max(0.,1.-length(f)*2.),14.);
- c+=vec3(.65,.80,1.)*star*.8;
- if(id==12)c=mix(c,vec3(.002,.028,.048),.65);
- return c;
+
+// The heightfield is original terrain, not a captured Minecraft framebuffer.
+// One small shared texture lookup replaces nested procedural FBM in the primary marcher.
+vec3 sunDir=normalize(vec3(-.6,.38,-.55));
+float terrain(vec2 x){
+ vec3 sampleHeight=textureLod(Landscape,clamp(x/4096.+.5,vec2(.002),vec2(.998)),0.).rgb;
+ float h=sampleHeight.r*255.+sampleHeight.g-26.;
+ float flattening=1.-smoothstep(110.,380.,length(x));
+#if FILM_ID != 12
+ h=mix(h,5.+sin(x.x*.018)*sin(x.y*.021)*1.4,flattening);
+#endif
+
+#if FILM_ID != 12
+ h=mix(h,h*2.3,smoothstep(350.,1100.,length(x)));
+#endif
+ return h;
 }
-void ground(int id){
- if(rd.y>=-.0001)return;float t=(-2.-ro.y)/rd.y;if(t<=0.)return;vec3 q=ro+rd*t;float n=acNoise(q*.5),fog=exp(-t*.008);
- vec3 base=id==10?vec3(.025,.047,.027):id==12?vec3(.012,.04,.055):vec3(.030,.035,.048);
- vec2 tile=abs(fract(q.xz/3.)-.5);float grid=0.;
- col=mix(col,base*(.7+n*.8)*(1.-grid*.2)+fill*.025,fog);depth=t;
+float fault(vec2 x){return x.x+sin(x.y*.008)*32.+sin(x.y*.029)*6.;}
+float groundHeight(vec2 x){
+ float h=terrain(x);
+#if FILM_ID == 13
+ float opening=ease(.28,.94,p)*65.;
+ float f=abs(fault(x));
+ h-= (1.-smoothstep(opening,opening+9.,f))*(110.+opening*2.)*ease(.10,.35,p);
+ h+=exp(-abs(f-opening-17.)*.025)*ease(.15,.8,p)*13.;
+#endif
+ return h;
 }
-void debris(float amount,float spread,vec3 color){
- for(int i=0;i<38;i++){
-  float k=float(i),a=k*2.399,r=(5.+hash(k)*20.)*(1.+amount*spread),y=hash(k+21.)*9.+amount*(7.+hash(k+8.)*24.);
-  vec3 q=vec3(cos(a)*r,y,sin(a)*r);float size=.17+hash(k+7.)*.6;
-  box(q,vec3(size,size*.8,size)*max(.05,1.-ease(.98,1.11,p)),color,.08);
+// Block districts are cut into a continuous landscape, never a finite tabletop.
+vec2 district(vec2 x){
+ vec2 cell=floor((x+14.)/28.);vec2 q=mod(x+14.,28.)-14.;
+ float seed=acHash(vec3(cell,31.)),w=7.+seed*3.;
+ float edge=max(abs(q.x)-w,abs(q.y)-w);
+ float mask=(1.-step(580.,length(x)))*step(.15,seed);
+ float h=10.+pow(seed,2.)*80.;
+#if FILM_ID == 9
+ float blast=ease(.73,1.02,p)*520.;float collapse=1.-ease(blast-70.,blast,length(x));h*=1.-collapse*.92;
+#elif FILM_ID == 14
+ float front=mix(-700.,850.,ease(.5,1.06,p));
+ h*=ease(front-25.,front+35.,x.y);mask*=ease(front-40.,front+10.,x.y);
+#endif
+ return vec2(h*mask,edge);
+}
+float surface(vec2 x){
+ float h=groundHeight(x);
+#if FILM_ID == 10
+ if(length(x)>370.){
+  vec2 cell=floor(x/23.),q=mod(x,23.)-11.5;float seed=acHash(vec3(cell,5.));
+  q-=vec2(sin(seed*81.),cos(seed*67.))*3.;float r=8.5+seed*3.;
+  float dead=ease(.35+length(x)*.0003,.79+length(x)*.0003,p);
+  if(length(q)<r&&seed>.12)h+=(24.+seed*22.)*sqrt(max(0.,1.-dot(q,q)/(r*r)))*(1.-dead);
+ }
+#endif
+ return h;
+}
+// Exact grid traversal: each district is intersected as solid geometry. Heightfield
+// marching must never skip narrow vertical facades or create perforated skyscrapers.
+void metropolis(){
+ vec2 dir=rd.xz+vec2(.000001),cell=floor((ro.xz+14.)/28.);
+ vec2 stepDir=sign(dir),delta=abs(28./dir);
+ vec2 boundary=(cell+step(vec2(0),dir))*28.-14.;
+ vec2 next=(boundary-ro.xz)/dir;
+ float travel=0.;
+ for(int i=0;i<90;i++){
+  vec2 x=cell*28.;float seed=acHash(vec3(cell,31.));
+  if(length(x)<580.&&seed>.15){
+   vec2 b=district(x);float w=7.+seed*3.,base=groundHeight(x),height=b.x;
+   vec3 size=vec3(w,height*.5,w),center=vec3(x.x,base+height*.5,x.y);
+   vec3 inv=1./(rd+vec3(.000001)),a=(center-size-ro)*inv,b2=(center+size-ro)*inv;
+   vec3 lo=min(a,b2),hi=max(a,b2);float t=max(lo.x,max(lo.y,lo.z)),end=min(hi.x,min(hi.y,hi.z));
+   if(height>1.&&t>0.&&t<end&&t<depth){
+    vec3 q=ro+rd*t,v=abs((q-center)/size),n;
+    if(v.x>v.y&&v.x>v.z)n=vec3(sign(q.x-center.x),0,0);else if(v.y>v.z)n=vec3(0,sign(q.y-center.y),0);else n=vec3(0,0,sign(q.z-center.z));
+    vec3 mat=mix(vec3(.13,.16,.20),vec3(.28,.29,.29),seed);
+    float lit=.30+.70*max(0.,dot(n,sunDir));vec3 c=mat*lit;
+    if(n.y<.5){
+     vec2 wall=vec2(abs(n.x)>.5?q.z:q.x,q.y);vec2 win=fract(wall*vec2(.29,.32));
+     float windows=step(.20,win.x)*step(win.x,.65)*step(.27,win.y)*step(win.y,.75);
+     float on=step(.55,acHash(vec3(floor(wall*vec2(.29,.32)),seed*30.)));
+     c*=.6+.4*step(.12,win.y);c+=vec3(.48,.34,.16)*windows*on;
+     c+=vec3(.06,.085,.11)*windows*(1.-on);
+    }
+#if FILM_ID == 9
+    c+=vec3(.9,.16,.035)*exp(-abs(length(q.xz)-ease(.72,1.03,p)*900.)*.045)*ease(.7,.8,p);
+#elif FILM_ID == 14
+    c+=vec3(1.4,.12,.36)*exp(-abs(q.z-mix(-700.,850.,ease(.5,1.06,p)))*.1);
+#endif
+    col=mix(c,atmosphere,1.-exp(-t*.0011-pow(t/1800.,4.)));depth=t;
+   }
+  }
+  if(next.x<next.y){travel=next.x;next.x+=delta.x;cell.x+=stepDir.x;}else{travel=next.y;next.y+=delta.y;cell.y+=stepDir.y;}
+  if(travel>min(depth,1800.))break;
  }
 }
-void city(float destruction,float water){
- for(int i=0;i<44;i++){
-  float k=float(i),x=(mod(k,8.)-3.5)*4.,z=(floor(k/8.)-2.5)*5.,h=2.+hash(k+3.)*8.;
-  float fall=destruction*ease(.05,.95,hash(k+91.)+destruction*.4);
-  vec3 q=vec3(x*(1.+fall*.55),h*.5-fall*(8.+hash(k)*12.)-water,z*(1.+fall*.55));
-  box(q,vec3(1.2,h*.5,1.35),vec3(.13,.16,.21),.0);
-  if(fall<.6)box(q+vec3(0,h*.5+.3,0),vec3(.6,.3,.7),vec3(.18,.20,.26),.03);
+vec3 sky(int id){
+ float horizon=pow(1.-max(0.,rd.y),4.);
+ vec3 zenith=vec3(.025,.018,.035),haze=vec3(.19,.085,.085);
+#if FILM_ID == 10
+ zenith=vec3(.045,.12,.15);haze=vec3(.45,.53,.39);
+#elif FILM_ID == 11
+ zenith=vec3(.025,.018,.052);haze=vec3(.16,.12,.21);
+#elif FILM_ID == 12
+ zenith=vec3(.012,.038,.06);haze=vec3(.12,.23,.27);
+#elif FILM_ID == 13
+ zenith=vec3(.07,.045,.045);haze=vec3(.45,.28,.18);
+#elif FILM_ID == 14
+ zenith=vec3(.022,.015,.04);haze=vec3(.26,.17,.25);
+#endif
+ vec3 c=mix(zenith,haze,horizon*.88);
+ float sun=max(0.,dot(rd,sunDir));c+=vec3(1.,.70,.39)*pow(sun,320.)*.9;
+ if(rd.y>0.){
+  vec2 cloud=rd.xz/(rd.y+.16)*1.1+vec2(tm*.003,0.);
+  float n=acFbm(vec3(cloud,6.));
+  float cover=smoothstep(.43,.77,n)*smoothstep(.0,.15,rd.y);
+  vec3 cloudLight=vec3(.10,.12,.15)+vec3(.38,.25,.16)*pow(sun,6.);
+  float rim=smoothstep(.53,.59,n)*(1.-smoothstep(.59,.64,n));
+  cloudLight+=vec3(.20,.16,.13)*rim;
+  c=mix(c,cloudLight,cover*.90);
+  // Broad shafts are atmospheric, not piles of additive geometry.
+  c+=vec3(.18,.13,.08)*pow(sun,28.)*(1.-n)*.5;
+ }
+atmosphere=c;
+#if FILM_ID == 9
+ float fall=ease(.65,1.03,p);
+ vec3 toSun=vec3(0,260.-fall*210.,380.)-ro;
+ float radius=(95.+fall*48.)/length(toSun);
+ float d=length(rd-normalize(toSun));
+ c+=vec3(1.7,.43,.19)*exp(-abs(d-radius)*150.)*(.7+ease(.15,.65,p));
+ c+=vec3(.65,.13,.08)*exp(-abs(d-radius)*23.)*.5;
+ c=mix(c,vec3(.004,.003,.008),1.-smoothstep(radius-.004,radius,d));
+ float a=atan(rd.y-normalize(toSun).y,rd.x-normalize(toSun).x);
+ c+=vec3(.9,.19,.09)*pow(max(0.,sin(a*13.+sin(a*19.)*.5-tm*.2)),12.)*exp(-abs(d-radius-.01)*32.)*.35;
+#endif
+ return c;
+}
+vec3 fogColor(){return atmosphere;}
+void landscape(){
+ float t=1.,old=1.;bool hit=false;
+ // Bounded linear-distance growth retains near-field detail, reaches a 3 km horizon.
+ for(int i=0;i<215;i++){
+  vec3 q=ro+rd*t;float d=q.y-surface(q.xz);
+  if(d<.08){hit=true;break;}old=t;
+  t+=max(.18+t*.009,min(d*.45,25.+t*.014));
+  if(t>3000.)break;
+ }
+ if(!hit)return;
+ for(int k=0;k<6;k++){float mid=(old+t)*.5;vec3 q=ro+rd*mid;if(q.y>surface(q.xz))old=mid;else t=mid;}
+ vec3 q=ro+rd*t;float eps=max(6.,t*.006),h=surface(q.xz);
+ vec3 n=normalize(vec3(surface(q.xz-vec2(eps,0))-surface(q.xz+vec2(eps,0)),2.*eps,surface(q.xz-vec2(0,eps))-surface(q.xz+vec2(0,eps))));
+ float grain=textureLod(Landscape,q.xz/4096.+.5,0.).b;
+ float detail=acNoise(q*.68)*.65+acNoise(q*2.3)*.35;
+ vec3 rock=mix(vec3(.13,.115,.10),vec3(.28,.25,.22),grain);
+ vec3 grass=mix(vec3(.10,.16,.085),vec3(.24,.28,.13),grain);
+ vec3 mat=mix(rock,grass,smoothstep(.55,.9,n.y))*(.55+detail*.8);
+#if FILM_ID == 10
+ float death=ease(.35,.95,p);mat=mix(mat,vec3(.16,.12,.075),death*.8);
+ if(q.y>groundHeight(q.xz)+2.)mat=mix(vec3(.08,.17,.035),vec3(.15,.10,.055),death)*(.5+detail*.7);
+#elif FILM_ID == 11
+ mat=mix(mat,vec3(.17,.13,.18),.5);
+#elif FILM_ID == 12
+ mat=mix(mat,vec3(.12,.19,.20),.5);
+#elif FILM_ID == 13
+ mat=mix(mat,vec3(.24,.15,.10),.6);
+#endif
+ vec3 emission=vec3(0.);
+#if FILM_ID == 9 || FILM_ID == 12 || FILM_ID == 14
+ vec2 b=district(q.xz);
+ if(b.y<.25&&b.x>1.&&q.y>groundHeight(q.xz)+1.){
+  mat=vec3(.12,.15,.19)*(.75+grain*.6);
+  if(abs(n.y)<.45){
+   vec2 wall=vec2(abs(n.x)>.5?q.z:q.x,q.y);
+   vec2 win=fract(wall*vec2(.34,.39));
+   float windows=step(.25,win.x)*step(win.x,.70)*step(.28,win.y)*step(win.y,.75);
+   float on=step(.46,acHash(vec3(floor(wall*vec2(.34,.39)),floor(q.x/28.))));
+   emission=vec3(1.,.66,.26)*windows*on*.6;
+   mat*=.6+.4*step(.12,win.y);
+  }
+ }
+#endif
+ float shadow=1.;
+ float diffuse=max(0.,dot(n,sunDir));
+ vec3 light=vec3(.35,.43,.52)*(.32+.28*n.y)+vec3(1.1,.78,.47)*diffuse*(.15+.85*shadow);
+ vec3 c=mat*light+emission;
+#if FILM_ID == 13
+ float width=ease(.28,.94,p)*65.;float f=abs(fault(q.xz));
+ float seam=exp(-abs(f-width)*.13)*ease(.12,.6,p);
+ float lava=(1.-smoothstep(width-5.,width+3.,f))*ease(.1,.6,p);
+ float veins=smoothstep(.32,.66,acFbm(vec3(q.x*.09,q.z*.06,tm*.11)));
+ float deep=1.-smoothstep(-170.,-70.,q.y);
+ float cracks=pow(max(0.,sin(q.y*.45+acNoise(q*.12)*5.)),14.);
+ c=mix(c,vec3(.10,.065,.045)*(.6+detail*.6),smoothstep(0.,1.,1.-n.y)*ease(.1,.6,p));
+ c+=vec3(2.6,.30,.025)*(seam*.12+lava*deep*veins+lava*cracks*.07);
+#endif
+#if FILM_ID == 9
+ float ring=exp(-pow((length(q.xz)-ease(.72,1.03,p)*900.)/18.,2.))*ease(.7,.8,p);
+ c+=vec3(3.,.6,.16)*ring;
+#endif
+#if FILM_ID == 14
+ float front=mix(-700.,850.,ease(.5,1.06,p));
+ float line=exp(-abs(q.z-front)*.13);c+=vec3(2.,.3,.65)*line;
+ c*=mix(.12,1.,ease(front-20.,front+20.,q.z));
+#endif
+ col=mix(c,fogColor(),1.-exp(-t*.0011-pow(t/1800.,4.)));depth=t;
+}
+// Coarse lobes plus fine leaf clusters displace the silhouette itself. This is not
+// a smooth sphere with green noise painted on it. Every leaf volume remains bounded.
+float leafField(vec3 q,vec3 center,float r){
+ vec3 v=q-center;
+ float broad=acNoise(q*.23),fine=acNoise(q*1.15);
+ return length(v)-r*(.78+.18*(broad-.5)+.025*(fine-.5));
+}
+void canopy(vec3 center,float r,float dead){
+ vec3 o=ro-center;float b=dot(o,rd),h=b*b-dot(o,o)+r*r;if(h<0.)return;
+ float t=max(.01,-b-sqrt(h)),end=min(depth,-b+sqrt(h));if(t>end)return;
+ for(int k=0;k<25;k++){
+  vec3 q=ro+rd*t;float d=leafField(q,center,r);
+  if(d<.055){
+   vec2 e=vec2(.12,0);vec3 n=normalize(vec3(leafField(q+e.xyy,center,r)-leafField(q-e.xyy,center,r),leafField(q+e.yxy,center,r)-leafField(q-e.yxy,center,r),leafField(q+e.yyx,center,r)-leafField(q-e.yyx,center,r)));
+   float local=acNoise(q*.9),lit=max(0.,dot(n,sunDir));
+   vec3 c=mix(vec3(.04,.10,.02),vec3(.13,.23,.045),local);
+   c=mix(c,vec3(.14,.095,.045),dead*.9)*(.35+lit*.9);
+   float back=pow(max(0.,dot(rd,sunDir)),4.);c+=vec3(.14,.20,.045)*back*(1.-dead);
+   col=mix(c,atmosphere,1.-exp(-t*.0011-pow(t/1800.,4.)));depth=t;return;
+  }
+  t+=max(.055,d*.55);if(t>end)return;
  }
 }
 #if FILM_ID == 9
 void cataclysm(){
- float omen=ease(.04,.25,p),fracture=ease(.25,.64,p),fall=ease(.64,1.,p),after=ease(1.,1.12,p);
- city(fall,0.);debris(fall,.5,vec3(.19,.16,.22));
- // The black sun crosses the horizon; its crown breaks into falling celestial plates.
- sphere(vec3(0,23.-fall*21.,23.-fall*14.),7.+fall*3.,vec3(.028,.022,.05),.03);
- for(int i=0;i<12;i++){
-  float k=float(i),a=k*TAU/12.,r=10.+fracture*5.,yy=23.+sin(a)*r-fall*(13.+hash(k)*12.);
-  box(vec3(cos(a)*r,yy,20.+sin(a*.7)*3.),vec3(1.3,2.4,.5)*(1.-after*.8),vec3(.15,.12,.22),fracture*.22);
+ float fracture=ease(.24,.68,p),fall=ease(.65,1.03,p);
+ vec3 center=vec3(0,260.-fall*210.,380.);
+ for(int i=0;i<13;i++){
+  float k=float(i),a=k*TAU/13.,r=135.+fracture*75.;
+  vec3 q=center+vec3(cos(a)*r,sin(a)*r,25.+sin(k)*15.);
+  sphere(q,7.+hash(k)*10.,vec3(.10,.055,.065),fracture*.08);
  }
- for(int i=0;i<7;i++){
-  float k=float(i),a=-1.1+k*.37;vec3 last=vec3(0,24.,18.);
-  for(int j=1;j<=6;j++){float u=float(j)/6.;vec3 q=vec3(sin(a)*u*36.,24.+cos(a)*u*21.,18.-u*8.+sin(float(j)*7.+k)*2.);
-   beam(last,q,.035+fracture*.055,vec3(1.4,.48,.74),omen*fracture*(1.-after));last=q;}
+ // Fractures connect the failing celestial crown to the city, then become impacts.
+ for(int i=0;i<5;i++){
+  float k=float(i);vec3 end=vec3((k-2.)*150.,6.,60.+hash(k)*400.);
+  vec3 last=center;
+  for(int j=1;j<=6;j++){
+   float f=float(j)/6.;vec3 q=mix(center,end,f)+vec3(sin(float(j)*7.+k)*12.,0,cos(float(j)*5.+k)*9.)*sin(f*PI);
+   beam(last,q,.35,vec3(1.6,.23,.08),fracture*(1.-ease(.95,1.1,p))*.6);last=q;
+  }
  }
- float pulse=ease(.91,1.,p)*(1.-after);beam(vec3(0,-5.,0),vec3(0,42.,0),.35+pulse*1.5,vec3(1.7,.9,1.3),pulse*.8);
 }
 #endif
 #if FILM_ID == 10
 void life(){
- float awake=ease(.03,.24,p),drain=ease(.37,.82,p),collapse=ease(.82,1.08,p);
- vec3 bark=mix(vec3(.30,.20,.10),vec3(.15,.14,.13),drain);
- // Living forest establishes scale; the death front propagates outwards.
- for(int k=0;k<12;k++){
-  float a=float(k)*2.399,r=19.+hash(float(k))*12.,death=ease(.47+r*.003,.88+r*.003,p);
-  vec3 q=vec3(cos(a)*r,-2.,sin(a)*r);
-  box(q+vec3(0,2.8-death*3.,0),vec3(.3,4.8,.3),bark,0.);
-  float leaf=1.-death;
-  if(leaf>.02)box(q+vec3(0,8.-death*5.,0),vec3(3.,2.5,3.)*leaf,vec3(.14,.31,.13),0.);
+ float death=ease(.32,.96,p),fall=ease(.88,1.10,p);
+ vec3 wood=mix(vec3(.23,.14,.065),vec3(.12,.10,.09),death);
+ // Foreground trunks, middle-distance woods and a 150 metre world-tree.
+ for(int i=0;i<72;i++){
+  float k=float(i),a=k*2.399,r=95.+hash(k)*420.;vec2 x=vec2(cos(a),sin(a))*r;
+  float y=terrain(x),ht=20.+hash(k+5.)*26.;
+  branch(vec3(x.x,y,x.y),vec3(x.x,y+ht,x.y),1.4,wood);
+  float local=ease(.3+r*.0005,.72+r*.0005,p);
+  if(local<.98)canopy(vec3(x.x,y+ht,x.y),ht*.35*(1.-local*.8),local);
  }
- // Roots are solid and remain rooted in the scene; none originate at the player.
- branch(vec3(0,-2.,0),vec3(-.3,11.-collapse*3.,0),1.2,bark);
- branch(vec3(-.3,10.-collapse*3.,0),vec3(1.,21.-collapse*10.,.5),.70,bark);
- for(int k=0;k<7;k++){
-  float a=float(k)*2.399;vec3 v=vec3(cos(a),0,sin(a));
-  vec3 root=v*13.+vec3(0,-1.8,0),mid=v*5.+vec3(0,1.,0);
-  branch(root,mid,.35,bark);branch(mid,vec3(0,3.,0),.55,bark);
-  vec3 base=vec3(0,10.+float(k%3)*2.-collapse*4.,0),tip=v*(8.+float(k%3)*2.)+vec3(0,18.+float(k%4)*2.-collapse*(8.+hash(float(k))*5.),0);
-  branch(base,tip,.33,bark);
-  float crown=1.-ease(.35,.91,drain);
-  if(crown>.02)box(tip+vec3(0,.5-collapse*5.,0),vec3(3.1,1.7,2.8)*crown,mix(vec3(.13,.32,.13),vec3(.26,.18,.07),drain),.04*awake);
-  for(int n=0;n<2;n++){
-   float f=float(n)/2.;vec3 q=mix(base,tip,.5+f*.5),side=vec3(-v.z,0,v.x)*(2.+f*2.);
-   branch(q,q+side+vec3(0,2.,0),.12,bark);
-   float leaf=1.-ease(.25+f*.13,.76+f*.13,drain);
-   if(leaf>.015)box(q+side+vec3(0,2.2-collapse*8.,0),vec3(2.1,1.,1.8)*leaf,mix(vec3(.13,.34,.15),vec3(.29,.19,.07),drain),.05*awake);
+ branch(vec3(0,5.,0),vec3(5.,90.-fall*40.,3.),6.,wood);
+ branch(vec3(5.,70.-fall*20.,3.),vec3(-2.,143.-fall*95.,0),3.2,wood);
+ for(int i=0;i<11;i++){
+  float a=float(i)*2.399;vec3 v=vec3(cos(a),0,sin(a));
+  branch(v*36.+vec3(0,5.,0),v*15.+vec3(0,7.,0),1.4,wood);
+  branch(v*15.+vec3(0,7.,0),vec3(0,17.,0),2.5,wood);
+  vec3 base=vec3(3,55.+float(i%4)*14.-fall*25.,0);
+  vec3 tip=v*(28.+hash(float(i))*30.)+vec3(0,98.+float(i%4)*12.-fall*80.,0);
+  branch(base,tip,1.8,wood);
+  for(int j=0;j<3;j++){
+   float f=float(j)/3.;vec3 q=mix(base,tip,.5+f*.5),end=q+vec3(-v.z,0,v.x)*(8.+f*10.)+vec3(0,10.,0);
+   branch(q,end,.65,wood);
+   float leaf=1.-ease(.67+f*.04,1.05,p);
+   if(leaf>.03)canopy(end,17.*leaf,death);
+   for(int twig=0;twig<3;twig++){
+    float a2=a+float(twig)*2.1;vec3 tip2=end+vec3(cos(a2)*9.,4.+float(twig),sin(a2)*9.);
+    branch(end,tip2,.24,wood);
+   }
   }
  }
- for(int k=0;k<20;k++){
-  float a=float(k)*2.399,down=mod(tm*(.4+drain)+float(k)*1.37,21.);
-  vec3 q=vec3(cos(a)*(5.+hash(float(k))*8.),21.-down,sin(a)*(5.+hash(float(k))*8.));
-  box(q,vec3(.11,.025,.23),mix(vec3(.23,.52,.19),vec3(.18,.16,.13),drain),.07*(1.-drain));
+ for(int i=0;i<22;i++){
+  float k=float(i),a=k*2.399;vec3 q=vec3(cos(a)*(15.+hash(k)*42.),mod(k*8.-tm*(1.+death*4.),120.)+8.,sin(a)*40.);
+  sphere(q,.18+hash(k)*.4,vec3(.6,.5,.15),.1*(1.-death));
  }
- float pulse=awake*(1.-drain);beam(vec3(0,1.,0),vec3(0,20.,0),.10,vec3(.35,1.5,.45),pulse*.35);
+ beam(vec3(0,8.,0),vec3(0,135.,0),.3,vec3(.45,1.2,.26),(1.-death)*ease(.05,.3,p)*.25);
 }
 #endif
+float sdBox(vec3 q,vec3 b){vec3 d=abs(q)-b;return length(max(d,0.))+min(max(d.x,max(d.y,d.z)),0.);}
 #if FILM_ID == 11
+float cathedralField(vec3 q){
+ float rise=ease(.02,.28,p);q.y+=80.*(1.-rise);
+ float d=sdBox(q-vec3(0,8,30),vec3(57,3,105));
+ // Twin high spires, repeated buttresses, clerestory and a hollow nave.
+ vec3 a=q-vec3(0,42,24);float outer=sdBox(a,vec3(35,32,79));
+ float inner=sdBox(a-vec3(0,-5,-4),vec3(29,31,82));d=min(d,max(outer,-inner));
+ vec3 tower=q-vec3(0,48,-55);tower.x=abs(tower.x)-43.;
+ d=min(d,sdBox(tower,vec3(12,40,15)));
+ vec3 cone=tower-vec3(0,55,0);float spire=max(length(cone.xz)-(20.-cone.y)*.32,max(-cone.y-18.,cone.y-20.));d=min(d,spire);
+ vec3 roof=q-vec3(0,78,24);float gable=max(abs(roof.x)*.72+roof.y-17.,max(-roof.y-3.,abs(roof.z)-81.));d=min(d,gable);
+ vec3 rib=q-vec3(0,43,24);rib.z=mod(rib.z+10.,20.)-10.;rib.x=abs(rib.x)-39.;
+ d=min(d,sdBox(rib,vec3(2.1,34,2.1)));
+ vec3 butt=q-vec3(0,23,24);butt.z=mod(butt.z+10.,20.)-10.;butt.x=abs(butt.x)-49.;
+ d=min(d,sdBox(butt,vec3(3,14,3)));
+ // Stone archivolts, roof cornices and spire collars cast their own silhouette.
+ d=min(d,sdBox(q-vec3(0,73,24),vec3(37,1.4,81)));
+ vec3 coll=q-vec3(0,86,-55);coll.x=abs(coll.x)-43.;d=min(d,sdBox(coll,vec3(13.5,1.5,16.5)));
+ vec3 front=q-vec3(0,40,-61.);front.x=abs(front.x)-26.;d=min(d,sdBox(front,vec3(1.1,31,2.3)));
+ vec3 slit=q-vec3(0,43,24);slit.z=mod(slit.z+10.,20.)-10.;
+ float opening=max(abs(slit.z)-3.0,max(22.-q.y,q.y-61.));
+ d=max(d,-max(opening,abs(abs(q.x)-35.)-2.5));
+ vec3 diagonal=q-vec3(0,44,24);diagonal.x=abs(diagonal.x)-44.;diagonal.z=mod(diagonal.z+10.,20.)-10.;
+ diagonal.xy=rot(.57)*diagonal.xy;d=min(d,sdBox(diagonal,vec3(1.5,18.,1.5)));
+ // Real arched opening, revealing illuminated inner apse.
+ vec3 door=q-vec3(0,25,-55);float arch=max(abs(door.x)-15.,max(-door.y-16.,length(vec2(door.x,max(0.,door.y-8.)))-15.));
+ d=max(d,-max(arch,abs(door.z)-12.));
+ return d;
+}
 void cathedral(){
- float rise=ease(.06,.38,p),gates=ease(.4,.72,p),sentence=ease(.73,1.,p),collapse=ease(1.,1.12,p);
- vec3 stone=vec3(.075,.067,.11);float y=-12.*(1.-rise)-collapse*9.;
- // Nave, twin towers, pointed roof steps, flying buttresses and a genuinely opening portal.
- // A hollow nave, not a solid box behind the supposedly opening doors.
- box(vec3(-5.4,3.+y,5.),vec3(.7,5.,9.),stone,0.);
- box(vec3(5.4,3.+y,5.),vec3(.7,5.,9.),stone,0.);
- box(vec3(0,7.5+y,5.),vec3(5.4,.6,9.),stone,0.);
- box(vec3(0,-1.6+y,5.),vec3(5.4,.3,9.),stone,0.);
- box(vec3(0,3.+y,13.6),vec3(5.4,5.,.4),stone,0.);
- for(int k=0;k<4;k++)for(int side=-1;side<=1;side+=2){
-  float z=-1.+float(k)*3.8;box(vec3(float(side)*3.8,2.5+y,z),vec3(.35,4.5,.35),stone*1.5,.02);
+ float structureY=-80.*(1.-ease(.02,.28,p));
+ // Clip marching to the structure, so the kilometre-scale terrain remains cheap.
+ vec3 inv=1./(rd+vec3(.000001));vec3 a=(vec3(-65,0,-80)-ro)*inv,b=(vec3(65,150,140)-ro)*inv;
+ vec3 lo=min(a,b),hi=max(a,b);float t=max(.1,max(lo.x,max(lo.y,lo.z))),end=min(depth,min(hi.x,min(hi.y,hi.z)));
+ for(int i=0;i<110;i++){
+  if(t>end)break;vec3 q=ro+rd*t;float d=cathedralField(q);
+  if(d<.10){
+   vec2 e=vec2(.15,0);vec3 n=normalize(vec3(cathedralField(q+e.xyy)-cathedralField(q-e.xyy),cathedralField(q+e.yxy)-cathedralField(q-e.yxy),cathedralField(q+e.yyx)-cathedralField(q-e.yyx)));
+   vec2 wall=vec2(abs(n.x)>.5?q.z:q.x,q.y);
+   vec2 brick=vec2(wall.x+mod(floor(wall.y/1.3),2.)*1.7,wall.y)/vec2(3.4,1.3);
+   vec2 seams=abs(fract(brick)-.5);float mortar=smoothstep(.44,.49,max(seams.x,seams.y));
+   float stones=acNoise(q*.6);vec3 c=mix(vec3(.11,.115,.14),vec3(.17,.17,.18),stones)*(.42+.58*max(0.,dot(n,sunDir)))*(1.-mortar*.20);
+   float cornice=1.-smoothstep(.2,.7,abs(mod(q.y-12.,19.)-.0));c+=vec3(.025)*cornice;
+   float localX=abs(n.x)>.5?mod(q.z+10.,20.)-10.:mod(q.x+10.,20.)-10.;
+   float wy=q.y-44.;float archShape=max(abs(localX)-2.5,max(-wy-10.,length(vec2(localX,max(0.,wy-5.)))-2.5));
+   float windows=(1.-smoothstep(-.2,.2,archShape))*step(27.,q.y)*step(q.y,65.);
+   float mullion=step(.18,abs(localX))*step(.14,abs(mod(q.y,4.)-2.));windows*=mullion;
+   windows*=.55+.45*acNoise(q*.33);
+   c+=mix(vec3(.16,.12,.42),vec3(.68,.24,.10),acNoise(q*.15))*windows*(.8+ease(.3,.8,p));
+   c+=vec3(.65,.31,.12)*exp(-length((q-vec3(0,22,80)).xz)*.03)*ease(.3,.8,p)*.3;
+   col=mix(c,fogColor(),1.-exp(-t*.0011-pow(t/1800.,4.)));depth=t;break;
+  }t+=max(.08,d*.7);
  }
- box(vec3(0,9.+y,-4.),vec3(5.4,1.5,.35),stone,0.);
- for(int k=0;k<5;k++)box(vec3(0,8.+float(k)*.8+y,5.),vec3(6.-float(k)*1.15,.45,9.5),stone,.025);
- for(int side=-1;side<=1;side+=2){
-  float x=float(side)*7.;box(vec3(x,7.+y,-4.),vec3(2.,9.,2.3),stone,.02);
-  for(int k=0;k<3;k++)box(vec3(x,5.+float(k)*4.+y,-6.34),vec3(.28,1.1,.025),vec3(.13,.065,.21),rise*.28);
-  for(int k=0;k<5;k++)box(vec3(x,16.+float(k)*1.25+y,-4.),vec3(max(.15,2.1-float(k)*.42),.7,max(.15,2.3-float(k)*.46)),stone,.04);
-  for(int k=0;k<4;k++){
-   float z=-1.+float(k)*4.;box(vec3(float(side)*9.,3.+y,z),vec3(.7,5.,.7),stone,.0);
-   branch(vec3(float(side)*9.,7.+y,z),vec3(float(side)*5.,10.+y,z),.32,stone*1.4);
+ for(int k=0;k<6;k++)for(int side=-1;side<=1;side+=2){
+  vec3 at=vec3(float(side)*47.,9.,-95.-float(k)*25.);
+  box(at,vec3(4.,4.,4.),vec3(.14,.14,.16),0.);
+  box(at+vec3(0,8.,0),vec3(1.5,6.,1.5),vec3(.12,.12,.15),0.);
+  sphere(at+vec3(0,15.,0),1.1,vec3(.30,.17,.06),.20*ease(.12,.4,p));
+ }
+ float gate=ease(.32,.68,p),sentence=ease(.72,1.,p);
+ for(int side=-1;side<=1;side+=2)box(vec3(float(side)*(7.5+gate*17.),26.+structureY,-61.),vec3(7.2,19.,1.1),vec3(.16,.10,.20),.03);
+ glyph(vec3(0,65.+structureY,-57),vec3(0,0,-1),10.,tm*.035,ease(.05,.3,p)*.7);
+ beam(vec3(0,12.+structureY,82),vec3(0,155.+structureY,82),.7+sentence*2.,vec3(.75,.32,1.5),sentence*.65);
+ box(vec3(0,30.+structureY,98),vec3(18,20,.6),vec3(.025,.018,.04),0.);
+ float pt=(97.-ro.z)/rd.z;
+ if(pt>0.&&pt<depth){
+  vec3 pq=ro+rd*pt-vec3(0,30.+structureY,97);vec2 v=pq.xy/17.;float r=length(v);
+  if(r<1.){
+   float a=atan(v.y,v.x),spiral=pow(max(0.,sin(a*3.+r*15.-tm*.5)),10.);
+   float rim=exp(-abs(r-.94)*75.);
+   col=vec3(.009,.004,.024)+vec3(.16,.045,.30)*spiral*r*r*gate+key*rim*.5;depth=pt;
   }
-  // Door wings slide apart before the camera passes through the threshold.
-  box(vec3(float(side)*(1.6+gates*2.4),3.+y,-4.15),vec3(1.45,4.,.24),vec3(.14,.10,.20),gates*.12);
  }
- // Bright interior is behind the door geometry, never painted over the solid facade.
- box(vec3(0,3.+y,12.9),vec3(3.,4.,.12),vec3(.025,.008,.045),gates*.9);
- glyph(vec3(0,9.3+y,-5.0),vec3(0,0,-1),1.2,tm*.025,rise*.85);
- beam(vec3(-3.,7.+y,-4.7),vec3(0,10.+y,-4.7),.025,key,rise*.55);
- beam(vec3(0,10.+y,-4.7),vec3(3.,7.+y,-4.7),.025,key,rise*.55);
- beam(vec3(0,1.+y,5),vec3(0,26.+y,5),.12+sentence*.5,vec3(.72,.27,1.5),sentence*.7);
+ glyph(vec3(0,30.+structureY,96.8),vec3(0,0,-1),17.,-tm*.035,gate*.75);
 }
 #endif
 #if FILM_ID == 12
-float waterField(vec3 q,float front,float height){
- float crest=height+sin(q.x*.16+tm*.35)*2.1,overhang=sin(sat(q.y/crest)*PI)*3.;
- float face=front-overhang+sin(q.x*.24+q.y*.12)*.6;
- return max(face-q.z,max(q.y-crest,-3.-q.y));
+float oceanHeight(vec2 x){
+ float tide=ease(.23,1.,p),front=mix(650.,-350.,tide);
+ float d=x.y-front-sin(x.x*.017)*12.;float crest=exp(-pow((d-15.)/52.,2.));
+ float swell=3.+2.*sin(x.x*.035+tm*.8)+sin(x.y*.06-tm);
+ return -2.+swell+(70.+tide*110.)*ease(.13,.32,p)*crest+55.*tide*ease(0.,60.,d);
 }
 void abyss(){
- float tide=ease(.25,.98,p),drown=ease(.72,1.05,p);city(drown*.55,drown*4.);
- // Advancing ocean wall is a continuous thick water volume with a rolling overhanging lip.
- float front=mix(58.,-40.,tide),height=4.+tide*19.;
- vec3 inv=1./(rd+vec3(.00001));vec3 a=(vec3(-50.,-4.,front-3.)-ro)*inv,b=(vec3(50.,height+5.,front+12.)-ro)*inv;
- vec3 lo=min(a,b),hi=max(a,b);float enter=max(.01,max(lo.x,max(lo.y,lo.z))),leave=min(hi.x,min(hi.y,hi.z));
- if(leave>enter&&waterField(ro,front,height)>.0){float t=enter;
-  for(int i=0;i<80;i++){
-   if(t>leave||t>depth)break;vec3 q=ro+rd*t;
-   float field=waterField(q,front,height);
-   if(field<.018){
-    float crest=height+sin(q.x*.16+tm*.35)*2.1;
-    float foam=ease(crest-1.2,crest,q.y),n=acNoise(q*.9+vec3(0,tm*.3,0));
-    col=mix(vec3(.008,.055,.11),vec3(.025,.23,.30),.3+n*.5)+vec3(.32,.65,.69)*foam*.8;
-    col+=vec3(.07,.30,.36)*pow(max(0.,sin(q.x*.6+q.y*1.4-tm)),22.)*.2;depth=t;break;
-   }
-   t+=max(.018,field*.40);
+ if(ro.y<oceanHeight(ro.xz)-1.){
+  // Retain actual submerged streets. An underwater shot is not a flat blue overlay.
+  float fog=1.-exp(-min(depth,1500.)*.006);
+  col=mix(col*vec3(.12,.48,.68),vec3(.004,.038,.065),fog*.85);
+  col+=vec3(.015,.045,.055)*pow(max(0.,cos(rd.x*14.+rd.z*5.+tm*.07)),18.)*max(0.,rd.y+.5);
+  for(int i=0;i<24;i++){
+   float k=float(i),a=k*2.399;vec3 q=ro+vec3(cos(a)*(3.+hash(k)*16.),mod(k*2.+tm*1.6,24.)-5.,9.+hash(k+10.)*32.);
+   vec2 seg=segment(q,q+vec3(.0001,0,0));float r=.05+hash(k+7.)*.12;
+   if(seg.y<depth&&seg.x<r)col+=vec3(.09,.24,.27)*pow(sat(seg.x/r),5.)*.7;
   }
+  return;
  }
- if(drown>.05){
-  float caustic=pow(max(0.,sin(rd.x*30.+tm)*sin(rd.y*24.-tm*.7)),10.);
-  col=mix(col,vec3(.003,.032,.065)+vec3(.03,.16,.19)*caustic,drown*.58);
-  col+=vec3(.025,.075,.09)*pow(max(0.,cos(rd.x*11.+rd.y*4.+tm*.09)),16.)*drown;
-  for(int k=0;k<13;k++){float f=float(k),a=f*2.399;vec3 q=vec3(cos(a)*6.,mod(f*1.7+tm*1.1,22.)-3.,sin(a)*7.-8.);sphere(q,.05+hash(f)*.07,vec3(.1,.28,.34),.0);}
+ float t=2.,old=t;bool hit=false;
+ for(int i=0;i<130;i++){
+  vec3 q=ro+rd*t;float d=q.y-oceanHeight(q.xz);
+  if(d<.12){hit=true;break;}old=t;t+=max(.25+t*.008,min(d*.32,24.));if(t>depth||t>2300.)break;
  }
-}
-#endif
-#if FILM_ID == 13
-void sunder(){
- float crack=ease(.14,.57,p),split=ease(.48,.94,p),after=ease(.96,1.12,p);
- // A suspended, finite cross-section of a continent: topsoil, crust and luminous exposed mantle.
- for(int i=0;i<56;i++){
-  float k=float(i),x=(mod(k,8.)-3.5)*4.,z=(floor(k/8.)-3.)*4.;
-  float fault=x+.30*z+sin(z*.3)*1.5,side=sign(fault),separate=side*split*(3.+abs(z)*.15);
-  float yy=1.+hash(k+13.)*1.6-abs(fault)*.025-after*(hash(k)*7.);
-  vec3 q=vec3(x+separate,yy,z);float width=abs(fault)<2.8?1.6*(1.-crack*.65):1.85;
-  box(q-vec3(0,3.,0),vec3(width,3.,1.85),vec3(.16,.12,.10),abs(fault)<5.?crack*.35:.02);
-  box(q+vec3(0,.35,0),vec3(width,.40,1.85),vec3(.16,.23,.17),.0);
-  if(hash(k+9.)>.66&&abs(fault)>5.)box(q+vec3(0,1.3,0),vec3(.55,.7,.6),vec3(.20,.23,.26),0.);
+ if(hit&&t<depth){
+  for(int k=0;k<6;k++){float m=(old+t)*.5;vec3 q=ro+rd*m;if(q.y>oceanHeight(q.xz))old=m;else t=m;}
+  vec3 q=ro+rd*t;float e=.6;
+  vec3 n=normalize(vec3(oceanHeight(q.xz-vec2(e,0))-oceanHeight(q.xz+vec2(e,0)),2.*e,oceanHeight(q.xz-vec2(0,e))-oceanHeight(q.xz+vec2(0,e))));
+  n=normalize(n+vec3(acNoise(q*.18+vec3(tm*.4,0,0))-.5,0,acNoise(q*.21+vec3(5,tm*.3,1))-.5)*.10);
+  float fres=pow(1.-max(0.,dot(-rd,n)),4.);float spec=pow(max(0.,dot(reflect(-sunDir,n),-rd)),70.);
+  float crestNoise=acFbm(vec3(q.x*.18,q.y*.37-tm*.45,q.z*.16));
+  float foam=ease(90.,160.,q.y)*smoothstep(.44,.67,crestNoise);
+  foam+=pow(max(0.,crestNoise-.45)*2.,2.)*ease(40.,150.,q.y)*.3;
+  vec3 c=mix(vec3(.004,.025,.055),vec3(.12,.22,.25),fres)+vec3(.9,.73,.48)*spec*.7;
+  c=mix(c,vec3(.56,.71,.70),foam*.9);c+=vec3(.012,.065,.08)*max(0.,n.y);
+  col=mix(c,fogColor(),1.-exp(-t*.0011-pow(t/1800.,4.)));depth=t;
  }
- sphere(vec3(0,-8.,0),3.5+split*1.5,vec3(.7,.12,.015),.5*crack);
- for(int k=0;k<16;k++){
-  float z=-16.+float(k)*2.,x=-.30*z-sin(z*.3)*1.5;
-  beam(vec3(x-split*3.,.4,z),vec3(x-split*3.-.6,.4,z+2.),.06,vec3(1.7,.5,.08),crack);
-  beam(vec3(x+split*3.,.4,z),vec3(x+split*3.-.6,.4,z+2.),.06,vec3(1.7,.5,.08),crack);
- }
+ float under=ease(.88,1.03,p);col=mix(col,vec3(.006,.065,.095),under*.72);
 }
 #endif
 #if FILM_ID == 14
 void apocalypse(){
- float law=ease(.10,.48,p),cage=ease(.4,.73,p),erase=ease(.69,1.07,p);
- // Reality is removed row by row, leaving only the glyph court suspended in darkness.
- for(int i=0;i<54;i++){
-  float k=float(i),x=(mod(k,9.)-4.)*3.2,z=(floor(k/9.)-2.5)*4.;
-  float threshold=(z+12.)/24.,gone=ease(threshold*.8,threshold*.8+.20,erase);
-  float h=1.+hash(k+33.)*6.;
-  if(gone<.995){
-   vec3 q=vec3(x,h*.5+gone*12.,z);vec3 sz=vec3(1.35,h*.5,1.65)*(1.-gone);
-   box(q,sz,vec3(.15,.13,.19),gone*.5);
-  }
+ float law=ease(.08,.44,p),erase=ease(.5,1.06,p);
+ // A suspended court spans the city, with one travelling erasure plane.
+ glyph(vec3(0,240,0),vec3(0,1,0),290.,tm*.015,law*.8);
+ for(int k=0;k<7;k++){
+  float a=float(k)*TAU/7.;vec3 v=vec3(cos(a)*330.,140.+sin(float(k))*25.,sin(a)*330.);
+  box(v,vec3(7.,55.,5.),vec3(.12,.08,.15),law*.04);
+  beam(v-vec3(0,40,6),v+vec3(0,40,6),.3,key,law*.5);
  }
- for(int i=0;i<8;i++){
-  float a=float(i)*TAU/8.+tm*.015;vec3 at=vec3(cos(a)*19.,5.+law*8.,sin(a)*19.);
-  box(at,vec3(1.1,4.5,.45),vec3(.12,.09,.16),.05*law);
-  beam(at-vec3(0,3.5,.5),at+vec3(0,3.5,-.5),.035,key,law*.4);
- }
- glyph(vec3(0,25.,0),vec3(0,1,0),23.,tm*.035,law*.75);
-
- for(int k=0;k<8;k++){
-  float a=float(k)*TAU/8.;vec3 v=vec3(cos(a)*23.,0,sin(a)*23.);
-  beam(v-vec3(0,1.,0),v+vec3(0,25.,0),.025,vec3(1.2,.35,.52),cage*.6*(1.-ease(1.02,1.12,p)));
- }
- // The erasure front is a thin travelling plane, not a full-screen flash.
-
+ float front=mix(-700.,850.,erase);float t=(front-ro.z)/rd.z;
+ if(t>0.&&t<depth){vec3 q=ro+rd*t;float f=exp(-abs(q.y-50.)*.012)*law;col+=vec3(.40,.055,.14)*f*.3;}
 }
 #endif
 vec3 story(vec2 uv,int id){
  p=FxParams.y;tm=FxTime;
- key=id==9?vec3(1.6,.5,.8):id==10?vec3(.40,1.1,.45):id==11?vec3(.85,.40,1.5):id==12?vec3(.12,.65,.85):id==13?vec3(1.8,.65,.12):vec3(1.5,.48,.68);
- fill=id==9?vec3(.30,.20,.5):id==10?vec3(.16,.35,.20):id==11?vec3(.29,.22,.50):id==12?vec3(.10,.32,.45):id==13?vec3(.40,.25,.20):vec3(.35,.18,.30);
- float reveal=ease(.03,.23,p),orbit=ease(.23,.63,p),finale=ease(.66,1.,p),after=ease(1.,1.12,p);
- // Six edited shots, not a single orbiting tabletop. Each chapter has its own lens,
- // staging and trajectory: omen, detail, revelation, action, impact, aftermath.
+ key=id==9?vec3(1.6,.5,.3):id==10?vec3(.40,1.1,.45):id==11?vec3(.85,.40,1.5):id==12?vec3(.12,.65,.85):id==13?vec3(1.8,.65,.12):vec3(1.5,.48,.68);
+ fill=id==9?vec3(.30,.20,.29):id==10?vec3(.24,.35,.28):id==11?vec3(.29,.22,.40):id==12?vec3(.16,.32,.40):id==13?vec3(.40,.25,.20):vec3(.35,.18,.30);
  int shot=p<.18?0:p<.38?1:p<.62?2:p<.84?3:p<1.?4:5;
- float u=shot==0?p/.18:shot==1?(p-.18)/.20:shot==2?(p-.38)/.24:shot==3?(p-.62)/.22:shot==4?(p-.84)/.16:(p-1.)/.13;
- u=sat(u);vec3 eye,look;float lens=1.12;
-
+ float u=shot==0?p/.18:shot==1?(p-.18)/.20:shot==2?(p-.38)/.24:shot==3?(p-.62)/.22:shot==4?(p-.84)/.16:(p-1.)/.13;u=sat(u);
+ vec3 eye=vec3(0),look=vec3(0);float lens=1.3;
 #if FILM_ID == 9
- if(id==9){
-  if(shot==0){eye=vec3(-24.+u*8.,3.,-34.);look=vec3(0,7.,12.);}
-  else if(shot==1){eye=vec3(-10.+u*6.,21.,-2.);look=vec3(0,23.,23.);lens=1.65;}
-  else if(shot==2){eye=vec3(31.,18.+u*6.,-42.);look=vec3(0,15.,8.);}
-  else if(shot==3){eye=vec3(3.,2.5,-27.+u*6.);look=vec3(0,18.,18.);lens=.95;}
-  else if(shot==4){eye=vec3(-34.-u*13.,32.+u*12.,-46.);look=vec3(0,6.,4.);lens=.9;}
-  else{eye=vec3(24.+u*12.,18.+u*8.,-40.-u*10.);look=vec3(0,-1.,0);}
- }
+ if(shot==0){eye=vec3(-220.+u*60.,95.,-420.);look=vec3(0,95.,80.);}
+ else if(shot==1){eye=vec3(-42.,26.,-220.+u*28.);look=vec3(45,180.,250.);lens=1.6;}
+ else if(shot==2){eye=vec3(420.,230.+u*35.,-480.);look=vec3(0,90.,60.);}
+ else if(shot==3){eye=vec3(-42.,18.,-360.+u*20.);look=vec3(30,160.,200.);lens=1.1;}
+ else if(shot==4){eye=vec3(-480.-u*100.,310.+u*80.,-600.);look=vec3(0,8.,0);lens=1.1;}
+ else{eye=vec3(350.+u*60.,170.,-470.);look=vec3(0,10.,80.);}
+#elif FILM_ID == 10
+ if(shot==0){eye=vec3(-200.+u*50.,48.,-260.);look=vec3(0,78.,0);}
+ else if(shot==1){eye=vec3(62.-u*12.,84.,-115.);look=vec3(0,115.,0);lens=1.2;}
+ else if(shot==2){eye=vec3(155.,145.+u*10.,-220.);look=vec3(0,78.,0);}
+ else if(shot==3){eye=vec3(-65.+u*20.,17.,-98.);look=vec3(0,75.,0);lens=1.0;}
+ else if(shot==4){eye=vec3(150.+u*70.,185.,-250.);look=vec3(0,45.,0);}
+ else{eye=vec3(100.+u*25.,72.,-220.);look=vec3(0,27.,0);}
+#elif FILM_ID == 11
+ if(shot==0){eye=vec3(-160.+u*35.,45.,-260.);look=vec3(0,55.,20);}
+ else if(shot==1){eye=vec3(100.,95.+u*25.,-120.);look=vec3(35,98.,-30);lens=1.4;}
+ else if(shot==2){eye=vec3(-170.+u*40.,78.,-250.);look=vec3(0,67.,15);}
+ else if(shot==3){eye=vec3(0,24.,-180.+u*90.);look=vec3(0,30.,80);lens=1.1;}
+ else if(shot==4){eye=vec3(0,24.,-60.+u*105.);look=vec3(0,46.,98);lens=1.0;}
+ else{eye=vec3(180.+u*50.,145.,-220.);look=vec3(0,52.,35);}
+#elif FILM_ID == 12
+ if(shot==0){eye=vec3(-200.+u*40.,90.,-390.);look=vec3(0,28.,220);}
+ else if(shot==1){eye=vec3(-300.+u*40.,125.,-250.);look=vec3(0,105.,380);lens=1.5;}
+ else if(shot==2){eye=vec3(320.,190.+u*30.,-380.);look=vec3(0,90.,180);}
+ else if(shot==3){eye=vec3(-14.,34.,-350.+u*20.);look=vec3(0,90.,100);lens=1.1;}
+ else if(shot==4){eye=vec3(-14.,27.-u*20.,-295.);look=vec3(0,50.,-100);lens=.95;}
+ else{eye=vec3(-14.,8.,-320.-u*30.);look=vec3(0,20.,-100);}
+#elif FILM_ID == 13
+ if(shot==0){eye=vec3(-240.+u*50.,140.,-380.);look=vec3(0,12.,50);}
+ else if(shot==1){eye=vec3(-85.,40.,-220.+u*40.);look=vec3(0,0.,90);lens=1.2;}
+ else if(shot==2){eye=vec3(370.,300.+u*70.,-390.);look=vec3(0,-30.,20);}
+ else if(shot==3){eye=vec3(-130.-u*60.,65.,-250.);look=vec3(0,-80.,20);lens=1.05;}
+ else if(shot==4){eye=vec3(200.,440.+u*90.,-340.);look=vec3(0,-80.,40);}
+ else{eye=vec3(-450.-u*70.,250.,-430.);look=vec3(0,-20.,70);}
+#else
+ if(shot==0){eye=vec3(-220.+u*60.,90.,-410.);look=vec3(0,85.,10);}
+ else if(shot==1){eye=vec3(190.,150.+u*20.,-240.);look=vec3(0,240.,0);lens=1.0;}
+ else if(shot==2){eye=vec3(-410.,270.+u*30.,-490.);look=vec3(0,130.,0);}
+ else if(shot==3){eye=vec3(-14.,95.,-370.+u*45.);look=vec3(0,180.,0);lens=1.0;}
+ else if(shot==4){eye=vec3(350.,380.+u*50.,-450.);look=vec3(0,65.,20);}
+ else{eye=vec3(-370.-u*60.,240.,-450.);look=vec3(0,80.,0);}
 #endif
-
-#if FILM_ID == 10
- if(id==10){
-  if(shot==0){eye=vec3(-34.+u*8.,6.,-36.);look=vec3(0,12.,0);}
-  else if(shot==1){eye=vec3(9.-u*3.,14.,-9.);look=vec3(0,18.,0);lens=1.45;}
-  else if(shot==2){eye=vec3(26.,7.+u*6.,-32.);look=vec3(0,13.,0);}
-  else if(shot==3){eye=vec3(-14.+u*4.,2.5,-15.);look=vec3(0,9.,0);lens=.95;}
-  else if(shot==4){eye=vec3(18.+u*12.,29.+u*10.,-27.);look=vec3(0,6.,0);}
-  else{eye=vec3(5.+u*6.,8.+u*5.,-30.-u*8.);look=vec3(0,1.,0);}
- }
+ // Keep street-level camera lenses above buildings instead of cutting through blocks.
+#if FILM_ID == 9 || FILM_ID == 12 || FILM_ID == 14
+ eye.y=max(eye.y,groundHeight(eye.xz)+6.);
 #endif
-
-#if FILM_ID == 11
- if(id==11){
-  if(shot==0){eye=vec3(-27.+u*5.,2.5,-32.);look=vec3(0,6.,0);}
-  else if(shot==1){eye=vec3(12.,12.+u*9.,-13.);look=vec3(5,15.,-4.);lens=1.3;}
-  else if(shot==2){eye=vec3(-17.+u*5.,8.,-28.);look=vec3(0,10.,-2.);}
-  else if(shot==3){eye=vec3(0,2.5,-20.+u*14.);look=vec3(0,3.,12.);lens=1.0;}
-  else if(shot==4){eye=vec3(0,2.,-3.+u*13.);look=vec3(0,4.,13.);lens=.9;}
-  else{eye=vec3(28.+u*10.,24.,-34.-u*10.);look=vec3(0,3.,3.);}
- }
+ // Terrain clearance applies to the forest too; never begin a shot inside a hillside.
+ eye.y=max(eye.y,groundHeight(eye.xz)+12.);
+ camera(eye,look,uv,lens);depth=100000.;col=sky(id);landscape();
+#if FILM_ID == 9 || FILM_ID == 12 || FILM_ID == 14
+ metropolis();
 #endif
-
-#if FILM_ID == 12
- if(id==12){
-  if(shot==0){eye=vec3(-18.+u*7.,3.,-30.);look=vec3(0,3.,15.);}
-  else if(shot==1){eye=vec3(-32.+u*8.,18.,-26.);look=vec3(0,12.,35.);lens=1.4;}
-  else if(shot==2){eye=vec3(28.,25.+u*8.,-37.);look=vec3(0,9.,15.);}
-  else if(shot==3){eye=vec3(2.,2.2,-26.+u*5.);look=vec3(0,13.,10.);lens=.9;}
-  else if(shot==4){eye=vec3(-5.,1.-u*3.,-19.);look=vec3(0,4.,0);lens=.85;}
-  else{eye=vec3(12.,2.,-20.-u*4.);look=vec3(0,0,8.);lens=1.;}
- }
-#endif
-
-#if FILM_ID == 13
- if(id==13){
-  if(shot==0){eye=vec3(-22.+u*6.,8.,-31.);look=vec3(0,0,0);}
-  else if(shot==1){eye=vec3(-6.,2.5,-14.+u*6.);look=vec3(0,-1.,1.);lens=1.2;}
-  else if(shot==2){eye=vec3(25.,29.+u*8.,-30.);look=vec3(0,-1.,0);}
-  else if(shot==3){eye=vec3(-9.-u*9.,-4.,-21.);look=vec3(0,-5.,0);lens=.95;}
-  else if(shot==4){eye=vec3(16.,37.+u*14.,-23.);look=vec3(0,-3.,0);}
-  else{eye=vec3(-32.-u*12.,22.+u*9.,-35.-u*8.);look=vec3(0,-6.,0);}
- }
-#endif
-
-#if FILM_ID == 14
- if(id==14){
-  if(shot==0){eye=vec3(-20.+u*9.,3.,-32.);look=vec3(0,6.,0);}
-  else if(shot==1){eye=vec3(14.,13.+u*4.,-17.);look=vec3(18,13.,0);lens=1.65;}
-  else if(shot==2){eye=vec3(-29.,23.+u*5.,-38.);look=vec3(0,12.,0);}
-  else if(shot==3){eye=vec3(0,3.,-25.+u*8.);look=vec3(0,15.,0);lens=.95;}
-  else if(shot==4){eye=vec3(22.,35.+u*10.,-31.);look=vec3(0,9.,0);}
-  else{eye=vec3(-26.-u*10.,22.+u*5.,-38.);look=vec3(0,8.,0);}
- }
-#endif
- camera(eye,look,uv,lens);
- depth=100000.;col=sky(id);
- // Orbital continental section has no infinite floor; all other films have their own environment.
- if(id!=13){
-  ground(id);
-  for(int k=0;k<16;k++){
-   float a=float(k)*TAU/16.,r=70.+hash(float(k))*40.,height=5.+hash(float(k)+6.)*15.;
-   box(vec3(cos(a)*r,height*.5-2.,sin(a)*r),vec3(11.,height*.5,12.),fill*.32,0.);
-  }
- }
 #if FILM_ID == 9
  cataclysm();
 #elif FILM_ID == 10
- if(p<1.065)life();debris(ease(.88,1.10,p),.5,vec3(.16,.14,.12));
+ life();
 #elif FILM_ID == 11
  cathedral();
 #elif FILM_ID == 12
  abyss();
-#elif FILM_ID == 13
- sunder();
-#else
+#elif FILM_ID == 14
  apocalypse();
 #endif
-
- float haze=exp(-abs(rd.y)*18.);col+=fill*haze*.035;
- // Fade to an intact view of the real world, not a fake disconnect or a respawn overlay.
- return pow(film(col*1.35),vec3(.82));
+ // Light aerial haze and filmic shoulder preserve highlights without a white flash.
+ col+=fill*exp(-abs(rd.y)*16.)*.035;
+ return pow(film(col*1.65),vec3(.90));
 }
 void main(){
  vec2 uv=(texCoord-.5)*vec2(FxScreen.x/FxScreen.y,1.);uv.y=-uv.y;
- const int id=FILM_ID;vec3 scene=story(uv,id);
- // Opaque film throughout: no blended Minecraft view, ritual HUD, title or progress bars.
- float endFade=1.-smoothstep(75.,100.,FxImpact.x);
- float openFade=smoothstep(0.,.7,FxTime);
+ vec3 scene=story(uv,FILM_ID);
+ float endFade=1.-smoothstep(75.,100.,FxImpact.x),openFade=smoothstep(0.,.7,FxTime);
  scene*=openFade*endFade*(1.-.12*smoothstep(.3,1.2,length(uv)));
  fragColor=vec4(scene,1.)*ColorModulator;
 }

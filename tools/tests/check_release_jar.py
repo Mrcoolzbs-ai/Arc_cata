@@ -12,11 +12,14 @@ with zipfile.ZipFile(jar) as z:
  for id in range(9,15):
   name='saga' if id==9 else 'film_'+str(id)
   assert f'#define FILM_ID {id}' in z.read(prefix+f'shaders/core/{name}.fsh').decode()
-  assert json.loads(z.read(prefix+f'shaders/core/{name}.json'))['samplers']==[]
+  assert json.loads(z.read(prefix+f'shaders/core/{name}.json'))['samplers']==[{'name':'Landscape'}]
  assert prefix+'shaders/include/ac_film.glsl' in names
- records=json.loads(z.read(prefix+'sounds/audio_v061_manifest.json'))
+ for i in range(9,15):assert prefix+f'textures/cinematic/landscape_{i}.png' in names
+ for f in (P/'src/main/resources/assets').rglob('*'):
+  if f.is_file():assert z.read(str(f.relative_to(P/'src/main/resources')))==f.read_bytes(), 'stale resource: '+str(f)
+ records=json.loads(z.read(prefix+'sounds/audio_v062_manifest.json'))
  for item in records:assert hashlib.sha256(z.read(prefix+'sounds/'+item['file'])).hexdigest()==item['sha256']
- for item in json.loads((P/'docs/UNCHANGED_0.6.1.json').read_text())['unchanged']:
+ for item in json.loads((P/'docs/UNCHANGED_0.6.2.json').read_text())['unchanged']:
   if '/resources/' in item['file']:
    path=item['file'].split('/resources/',1)[1];assert hashlib.sha256(z.read(path)).hexdigest()==item['sha256']
 print('RELEASE_JAR_PASS',jar.name,'bytes='+str(jar.stat().st_size),'no_QA=true films=6 scores=6 End_resources=unchanged')

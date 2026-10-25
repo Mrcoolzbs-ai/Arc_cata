@@ -54,6 +54,7 @@ public final class SpellFilm {
         g.flush();target.bindWrite(true);
         RenderSystem.disableDepthTest();RenderSystem.depthMask(false);RenderSystem.disableBlend();RenderSystem.disableCull();
         RenderSystem.setShaderColor(1,1,1,1);RenderSystem.setShader(()->shader);
+        shader.setSampler("Landscape",m.getTextureManager().getTexture(Cataclysm.id("textures/cinematic/landscape_"+f.spell.ordinal()+".png")).getId());
         float age=f.age(partial);
         shader.safeGetUniform("FxParams").set((float)f.spell.ordinal(),age/f.spell.impact,1f,ClientOptions.FLASH.get()?1f:0f);
         shader.safeGetUniform("FxTime").set(age/20f);shader.safeGetUniform("FxScreen").set((float)rw,(float)rh);

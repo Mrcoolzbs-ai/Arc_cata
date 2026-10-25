@@ -6,7 +6,11 @@
     "UV0",
     "Color"
   ],
-  "samplers": [],
+  "samplers": [
+    {
+      "name": "Landscape"
+    }
+  ],
   "uniforms": [
     {
       "name": "ModelViewMat",

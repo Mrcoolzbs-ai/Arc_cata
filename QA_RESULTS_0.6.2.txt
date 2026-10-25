@@ -1,0 +1,38 @@
+Arcane Cataclysm 0.6.2-ensemble-cinematics
+2026-10-25 UTC | Minecraft 1.21.1 | NeoForge 21.1.264 | Java 21
+Linux/Xvfb/Mesa llvmpipe; null audio device; no hardware FPS or listening-quality claim.
+
+IMPACT_DYNAMICS_PASS checks=58881
+VISUAL_CONTRACT_PASS horizontal_seal_call_sites=10 halo=XZ camera_roll=0 toggles=verified
+CINEMATIC_CONTRACT_PASS scenes=15 epic=6 chapters=30 stereo_cues=30 preview=private no_caster_tethers=true
+FILM_SCORE_PASS last_cataclysm_score.ogg 34
+FILM_SCORE_PASS verdant_ruin_score.ogg 36
+FILM_SCORE_PASS obsidian_cathedral_score.ogg 38
+FILM_SCORE_PASS abyssal_deluge_score.ogg 40
+FILM_SCORE_PASS world_sunder_score.ogg 42
+FILM_SCORE_PASS rune_apocalypse_score.ogg 45
+FILM_CONTRACT_PASS opaque_layer=6 no_HUD_or_real_camera bounded_960x540 continuous_scores=6 transient_world=80ticks y0=explicit incremental_life_snapshot=true
+STYLE_CLIENT_READY gui=480x270 renderer=LWJGL version 3.3.3+5
+STYLE_SCENE_PASS spell=last_cataclysm frames=19
+STYLE_SCENE_PASS spell=verdant_ruin frames=19
+STYLE_SCENE_PASS spell=obsidian_cathedral frames=19
+STYLE_SCENE_PASS spell=abyssal_deluge frames=19
+STYLE_SCENE_PASS spell=world_sunder frames=19
+STYLE_SCENE_PASS spell=rune_apocalypse frames=19
+STYLE_ALL_PASS (staged client visuals, all fifteen ordinary spells; no destructive-server claims)
+Client scope: six films, ordinal 9 through 14; 19 states each, 114 captures.
+Historical fixture all-fifteen wording does not mean this run re-viewed all fifteen.
+Known environment-only warning: system Flite narrator library unavailable.
+Known software-renderer warning: integrated server lag during headless rendering.
+ENSEMBLE_AUDIO_PASS last_cataclysm_score.ogg LUFS=-18.00 dBTP=-2.50 parts=12
+ENSEMBLE_AUDIO_PASS verdant_ruin_score.ogg LUFS=-17.98 dBTP=-2.22 parts=13
+ENSEMBLE_AUDIO_PASS obsidian_cathedral_score.ogg LUFS=-17.99 dBTP=-2.14 parts=13
+ENSEMBLE_AUDIO_PASS abyssal_deluge_score.ogg LUFS=-17.99 dBTP=-2.81 parts=12
+ENSEMBLE_AUDIO_PASS world_sunder_score.ogg LUFS=-18.00 dBTP=-2.67 parts=12
+ENSEMBLE_AUDIO_PASS rune_apocalypse_score.ogg LUFS=-17.99 dBTP=-2.57 parts=12
+ENSEMBLE_QA_PASS recordings=6
+RELEASE_JAR_PASS arcane_cataclysm-0.6.2-ensemble-cinematics.jar bytes=23097606 no_QA=true films=6 scores=6 End_resources=unchanged
+Offline GLSL: all 36 final shot states rendered at 960x540; final sun/underwater corrections re-rendered.
+UNCHANGED_PASS tracked main source/resource files=110 against 4981ab1b9c3fb1c52c3491d1a938ffbfae249a51
+RELEASE_SHA256 a416df5cedec3f9010c5517ef5f00bd55db8a28a76d73fe2aaac6bcb5cad4ca0
+See TESTING.md for limits; no new destructive-server, remote multiplayer or user GPU claims.

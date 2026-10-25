@@ -1,0 +1,445 @@
+{
+  "baseline_commit": "4981ab1b9c3fb1c52c3491d1a938ffbfae249a51",
+  "unchanged": [
+    {
+      "file": "src/main/java/com/kostya/cataclysm/Cataclysm.java",
+      "sha256": "5689eadb88a5f62f650259d55699bd121b59b53f58373cda1bc561a029e4d789"
+    },
+    {
+      "file": "src/main/java/com/kostya/cataclysm/CataclysmConfig.java",
+      "sha256": "66769f3d494b3f8ec1ffff9df281f73989a8b0518f1074399970adaf505aabc8"
+    },
+    {
+      "file": "src/main/java/com/kostya/cataclysm/ClientOptions.java",
+      "sha256": "1652aa656d8d7589866255a5f0f787f46c4f8674a7cb32ae397bc45638f191aa"
+    },
+    {
+      "file": "src/main/java/com/kostya/cataclysm/GrimoireItem.java",
+      "sha256": "2ee93a86ae222cfda51baf516474ab32ee3f7c60cfda7c984e1efd2e5d268f6b"
+    },
+    {
+      "file": "src/main/java/com/kostya/cataclysm/ImpactDynamics.java",
+      "sha256": "367a0d0123ab5d5f18d895e99b22ed0039205f8b908344c98b3be1e8b5396f2b"
+    },
+    {
+      "file": "src/main/java/com/kostya/cataclysm/Spell.java",
+      "sha256": "d37a7fad3b94163ff811b1d3e50cb5585d8b59e0238e2cc4991b424e09f686d3"
+    },
+    {
+      "file": "src/main/java/com/kostya/cataclysm/SpellPatterns.java",
+      "sha256": "e6dd91a92762b61ae3face1c92e7f6590118c133facac746134e9f6c462143c6"
+    },
+    {
+      "file": "src/main/java/com/kostya/cataclysm/api/CataclysmAPI.java",
+      "sha256": "7fd0946dc248a66a0849a37dda95dde568669a382fc115fe2ce6ffb3a141d925"
+    },
+    {
+      "file": "src/main/java/com/kostya/cataclysm/client/ClientEffects.java",
+      "sha256": "1ef566b90088672b55c7b1461f4a944d9ce785fe997568bf08af7905d6252635"
+    },
+    {
+      "file": "src/main/java/com/kostya/cataclysm/client/ClientSetup.java",
+      "sha256": "54dff2a2186aa64e4525c232a0addb9d9112fd2839a6f48586c89b0c0554f258"
+    },
+    {
+      "file": "src/main/java/com/kostya/cataclysm/client/EndCinematic.java",
+      "sha256": "ce1e9c795c844d198deea5b5941df96e27679367def2ee000914645d4522df52"
+    },
+    {
+      "file": "src/main/java/com/kostya/cataclysm/client/FirstFiveRenderer.java",
+      "sha256": "5ceb5da4d4ace21084fe1794b09c23f4a4d973f62baa7dbd96a70922bdd765fc"
+    },
+    {
+      "file": "src/main/java/com/kostya/cataclysm/client/FxMesh.java",
+      "sha256": "63f1ae2ffbfee418d36b8d012818bb15f0f0cf5e8cd99ca6b53f424636661f3a"
+    },
+    {
+      "file": "src/main/java/com/kostya/cataclysm/client/HighTierWorldRenderer.java",
+      "sha256": "882f0e0a75188ee09eed7e193536aec760b057b60dae23558dfc589ce98165e1"
+    },
+    {
+      "file": "src/main/java/com/kostya/cataclysm/client/InvocationDirector.java",
+      "sha256": "fd335c5c936db6b8123d8ddfa2e15ff94c92c7737183d0bb440d825fdceb3f62"
+    },
+    {
+      "file": "src/main/java/com/kostya/cataclysm/client/InvocationHud.java",
+      "sha256": "0e975768232cf75747f92490199944f6382531d2e78f07b677edc43998198f47"
+    },
+    {
+      "file": "src/main/java/com/kostya/cataclysm/client/RitualRenderer.java",
+      "sha256": "ec5e8887b611b79d4c6b5c480f1aa09a4be26ca2badd354da5b143ac8e0ae97e"
+    },
+    {
+      "file": "src/main/java/com/kostya/cataclysm/client/ScreenFX.java",
+      "sha256": "9ad888a85eb6d2b6d539c0d36fec444d966bfa61558a854d5c1356cf774d895e"
+    },
+    {
+      "file": "src/main/java/com/kostya/cataclysm/client/SecondFourRenderer.java",
+      "sha256": "8815858cde2f04deb6be7d32f15f4d1ef0220bd132d5eebddb098d49511155b3"
+    },
+    {
+      "file": "src/main/java/com/kostya/cataclysm/client/SpellRenderer.java",
+      "sha256": "8367dc71472cabba644c3f332d7c43795c76b06a38b911d34394888494a5362f"
+    },
+    {
+      "file": "src/main/java/com/kostya/cataclysm/mixin/CameraMixin.java",
+      "sha256": "af427c0e21af351b73bcf63f178b4ed2f8f5c4138a7e34e272de9b3ea293f3c8"
+    },
+    {
+      "file": "src/main/java/com/kostya/cataclysm/mixin/HumanoidModelMixin.java",
+      "sha256": "7274d67f314233aa6345ac2edaf9abe50fc8b707328dfb59ad1bafc6058342c4"
+    },
+    {
+      "file": "src/main/java/com/kostya/cataclysm/mixin/MusicMixin.java",
+      "sha256": "a21efeaeac1ed988e065c6e226c28643a0d20961de26143d57ca5f739d786e70"
+    },
+    {
+      "file": "src/main/java/com/kostya/cataclysm/mixin/RespawnMixin.java",
+      "sha256": "3cb3b0d1631cc00ddc09df70e5e49b934b8898b27676cf202488e6adc903a30f"
+    },
+    {
+      "file": "src/main/java/com/kostya/cataclysm/network/SpellNetwork.java",
+      "sha256": "0573c3652d0050b740d2d3bdf67c74478f3cd9e73318764ee90634deea7405d8"
+    },
+    {
+      "file": "src/main/java/com/kostya/cataclysm/world/AreaDamage.java",
+      "sha256": "a386ae408ecfa71e35758d89916baf8f3e01981caf454fdcd128bc849d946f5c"
+    },
+    {
+      "file": "src/main/java/com/kostya/cataclysm/world/DestructionEngine.java",
+      "sha256": "1a40b86501aef10f9f7ff8960a874f00a5538ac226d65310e61cf143dc171697"
+    },
+    {
+      "file": "src/main/java/com/kostya/cataclysm/world/DestructionPlan.java",
+      "sha256": "f367cf7c7e7b389a9624cbfa3bd4768cb106475453fd075c1608752d1a553356"
+    },
+    {
+      "file": "src/main/java/com/kostya/cataclysm/world/EndEvent.java",
+      "sha256": "e6f72ff63daec374a66c63ef6f6207974c7a8642306ea746a33e2ef5b105836f"
+    },
+    {
+      "file": "src/main/java/com/kostya/cataclysm/world/EndSchedule.java",
+      "sha256": "a502cbba50c434f62f0c8077fc9a924875828f9ba2ed9301e6c795c32e057046"
+    },
+    {
+      "file": "src/main/java/com/kostya/cataclysm/world/PreparedChunk.java",
+      "sha256": "d219a8182dcad5d69977689fc2d940520873a3dbd345de285368dd0d0f51d056"
+    },
+    {
+      "file": "src/main/java/com/kostya/cataclysm/world/SpellManager.java",
+      "sha256": "c28ec17f50dafbe2383d3ef00f3e421b45693fe1677d219454bb0507ae50519d"
+    },
+    {
+      "file": "src/main/resources/arcane_cataclysm.mixins.json",
+      "sha256": "5d14890f1a618b369bb4cae6d6d394721f14a12f937f966502bbb9798eea9b98"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/lang/en_us.json",
+      "sha256": "24a48b6845c0e4cfdb34772b593e0ae845a31272a4bdb12f4df5ef539ef6a8f1"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/lang/ru_ru.json",
+      "sha256": "d236fc7a4f4aa35b308f9dafbc2b2318410454b3c3d1af16db309c434294ad96"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/models/item/grimoire_of_cataclysm.json",
+      "sha256": "738f9620d1a1c12228b0531e6ddd2882afc2dab529663fe6da0eb6162c65871c"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/shaders/core/ac_energy.fsh",
+      "sha256": "53412adab025fd324858c1837ac9f40f7bf97693972916916ee9c9204c1f7ed2"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/shaders/core/ac_energy.json",
+      "sha256": "43acb897bba1ad1f1062a55368ec50451bc98b3c222e11ae8a24239ea93adbc4"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/shaders/core/ac_energy.vsh",
+      "sha256": "45782438482fc34d22447dbdd48392ae061be74ae47fd9d418a1d89d3134b572"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/shaders/core/ac_glow.fsh",
+      "sha256": "47fffee5c1d713f5096092bd9647bc65803d803fbe85f6166c14bfbb67d7a9b4"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/shaders/core/ac_glow.json",
+      "sha256": "c37dbb9d6d96226c4ef47fce0b51542a1b274b433129576e5570d65ac02febf7"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/shaders/core/ac_glow.vsh",
+      "sha256": "6438d8dff136e7599117ce993a85d420a17f3521d18566fb87fce20ee9b89b52"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/shaders/core/ac_post.fsh",
+      "sha256": "517ce634333458a54d309ca9970cf712eb7d3f362b10136a4b4c0d629306a088"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/shaders/core/ac_post.json",
+      "sha256": "4e61596f97d8c885b7f79453ba44d66ef91b1208d0ab1392cbdba9dfe9902fc8"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/shaders/core/ac_post.vsh",
+      "sha256": "6438d8dff136e7599117ce993a85d420a17f3521d18566fb87fce20ee9b89b52"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/shaders/core/ac_rune.fsh",
+      "sha256": "9dfd0783bdb59897693718c244a35bf08f5effa18fb8a0af3dd8e6576cdbe1d2"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/shaders/core/ac_rune.json",
+      "sha256": "121e0ea636669f3a3dc86041785c4a1dee826df7abcd711247aa69a5b8210a70"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/shaders/core/ac_rune.vsh",
+      "sha256": "6438d8dff136e7599117ce993a85d420a17f3521d18566fb87fce20ee9b89b52"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/shaders/core/ac_surface.json",
+      "sha256": "a4e2af55286460f3bb3a2a629599a43c892a50e6a4bc1da7fd2bab2b01950b31"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/shaders/core/ac_void.json",
+      "sha256": "a4e2af55286460f3bb3a2a629599a43c892a50e6a4bc1da7fd2bab2b01950b31"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/shaders/core/end_scene.fsh",
+      "sha256": "98bc27eec3efb1e6e721c1d840443c7102484ac90c6847f19e5f3dc781e6d2cf"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/shaders/core/end_scene.json",
+      "sha256": "0c00c7dabd605cf20ffe88f6bab3965355659f62c289b440eff8087fc2f69fee"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/shaders/core/film_10.fsh",
+      "sha256": "9c13a5c8afb30577c68ab2f4460ff45576537c5c54b4d5ff9bda5ec3c7749844"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/shaders/core/film_11.fsh",
+      "sha256": "9172aae7b8016572b700e17b6cb1e97445a9e9f609376fcf0b86ae07b99a8cb1"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/shaders/core/film_12.fsh",
+      "sha256": "bb4b5d23e3d739c3be721b76c34d8530356e06d41c475c337e5c8ed7d4c6c355"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/shaders/core/film_13.fsh",
+      "sha256": "7585e9cce10bb44ee72ca08d0555b08869752f206ffe603ce6c19448528930e0"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/shaders/core/film_14.fsh",
+      "sha256": "13713d8928d37860b9752e514028763fec38a4df7c5ad0dce9febeb6aa81e91f"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/shaders/core/invocation.fsh",
+      "sha256": "9a700e8e18a1a0bf35b10b9aa7e228efba23ee1258213f5d99712eb4bc04e167"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/shaders/core/invocation.json",
+      "sha256": "a6ddd6d32f1eafc6404472f6d61939157e672bf6694b5208edbdbf071da2394a"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/shaders/core/saga.fsh",
+      "sha256": "5a459c415e6191fa0b5ccf1152f6f8a70a627363697df03236369d62a84b4d8b"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/shaders/include/ac_common.glsl",
+      "sha256": "587505ddaec568daa0bcef6921eb35d0737d0ad481ba151e8510c0976ab8d6b8"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds.json",
+      "sha256": "e1287f7a3a15ce5c370947e07832420c8bd7b551382f04ceb1d7322fec6bb273"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/abyssal_deluge_charge.ogg",
+      "sha256": "98d27db0df00c463fd1d8dea2c99b7cabc06bad6687f03b7515a35e6955d17ad"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/abyssal_deluge_impact.ogg",
+      "sha256": "d3cecef06534e4db9bd1161f8b9b50b87425a46d6fd5b7f982ff3ed89026802e"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/audio_v6_manifest.json",
+      "sha256": "2eae82ccc14bdbeeb462d6a53213ab05c300503a94802541529b5b52c273a054"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/charge.ogg",
+      "sha256": "5d41eb670b39ca43da8d24c6e28524afced1d9fdee395754e2e8b543e58ab37b"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/end_of_all_charge.ogg",
+      "sha256": "7eaa03bb4bd05d338d8b9b8bb0a98f6d8af939597bdecad048461a40d0a80f8e"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/end_of_all_impact.ogg",
+      "sha256": "796560651da9759103259614d54b115bc8cfae7a22c6d9465a1e5bf97b4d9712"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/heavens_lance_charge.ogg",
+      "sha256": "4143946a98ae3d71eda66e4a19ea2fad6a2b158845e05fbaf8bc88c5056d7be5"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/heavens_lance_impact.ogg",
+      "sha256": "0b396d5286b3371acf5cb7b1aba9936106cb4b98f4de0b13b8545fa0fdbe64d0"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/impact.ogg",
+      "sha256": "ebbf2708ef30b5ee8b67d6e427419af532d2adc9c152419a688b5dad78a3b1a2"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/inferno_tide_charge.ogg",
+      "sha256": "129b0f904c5c62af18346089f85e9a91ea52ce8c3cac236e881680386c04d46e"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/inferno_tide_impact.ogg",
+      "sha256": "8461b31b37d3bb541bf46ba8ae706248a8b5ec40c002d15bb5cc0f5d959e950c"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/last_cataclysm_charge.ogg",
+      "sha256": "2530fa1c3d6db2403f4500538ab6ff9e8146f576def53c8af2e80140d0e33f26"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/last_cataclysm_impact.ogg",
+      "sha256": "a3dc94878b545370e30ed37914caaa068d616455bcddf7e6d0c1dc2e5c020f65"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/obsidian_cathedral_charge.ogg",
+      "sha256": "7f6a13bf05ccb8ca28684b803d7125cc5a46e28afbad39e24fbfd4c0c6827242"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/obsidian_cathedral_impact.ogg",
+      "sha256": "8ba8710d87cd859bda3c2562d1ded0532ec3a7a8359406e687c0179534f525a8"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/rumble.ogg",
+      "sha256": "2815204ca0c63cc09db825008eb35fafcc7c161eebc2c23edf0465ae152c0ec4"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/rune_apocalypse_charge.ogg",
+      "sha256": "90438f8f24d82b89d8395e4b3f7917748beebcf960fb79cdae3b874ddc7e4c43"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/rune_apocalypse_impact.ogg",
+      "sha256": "7031344c0b458c41d0960f9783803bd6b1331699e3f3fabbae2c4bc222099543"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/singularity_charge.ogg",
+      "sha256": "02c262599e9566542ab07c64e94d63c38fa2eaa63e8a22e08662d4e16bb52b62"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/singularity_impact.ogg",
+      "sha256": "c87748d7ca5abb64bc41a4ca82adaad5d7cc22c29e33f47650507752b219406d"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/snow_grave_charge.ogg",
+      "sha256": "50f40b109851d2441a2264d034dde89ea1acd1d2642c90c8e5c63177c5cecdcb"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/snow_grave_impact.ogg",
+      "sha256": "7b280ee6a16383369923e9aa05943c463b5b2e777a2aa6fa428995ea07e66d59"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/solar_nova_charge.ogg",
+      "sha256": "2da0335154b9225b7b149c4673227b32918d590c5d3f124299f8dbbc4af6845e"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/solar_nova_impact.ogg",
+      "sha256": "faeb7419aca33d690aa541250881fb882f13830f397c4d83813c8b9cc0177e46"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/starfall_charge.ogg",
+      "sha256": "3243a6a9acfa55aa77ff589c36fee6efbc24b030d2c58b5e821eeac694a553b0"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/starfall_impact.ogg",
+      "sha256": "f6427339271d3e6a0e2a9a2817652fa6ba0d7dc431b291836aaaf4da16873c25"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/tectonic_rift_charge.ogg",
+      "sha256": "0cb33ef793841bce99b515097aa5027f0d600719d6837d9af63b3b0dc49f7493"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/tectonic_rift_impact.ogg",
+      "sha256": "9216f0c637a76aa522a8c84d1ee7700c4bcb0c398833e8c29b7a11f69cb2fb5f"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/tempest_wrath_charge.ogg",
+      "sha256": "29fcbc5352a875301e72e76fd121a7726fda8a10a3c0569a876cd85c5ecf4dfc"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/tempest_wrath_impact.ogg",
+      "sha256": "616921ec5deda4ab40ba53c940c97b4f9dfa2320e9eac07ae465114bd71502d7"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/thousand_blades_charge.ogg",
+      "sha256": "f81e681937bc18b65553da7ccb36645ff87222aec53cce0a9a1a545b9e6cf6f6"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/thousand_blades_impact.ogg",
+      "sha256": "43244af6c3c4b916cef8ac7e0ca564cfcbefbd3006e29170f44c6b95bd98acd4"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/verdant_ruin_charge.ogg",
+      "sha256": "fb2bd1cef01510c11d8d315b8b6e256e5b914b2aef1b4e596fe6dc2b799f77d5"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/verdant_ruin_impact.ogg",
+      "sha256": "3177e2f32f864750e932da41521ea618c5eca7f8b8fe04997c8a60b58d1f96b1"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/world_sunder_charge.ogg",
+      "sha256": "e5bae2f26f68aad815a16ef8d35c74ac35aab011a3c7ec6030f8b14e854bf169"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/sounds/world_sunder_impact.ogg",
+      "sha256": "89815cf0d692336bc1d371e699b91787e85976e0c2c28ed4bb14e6b08312d0ce"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/textures/gui/fake_disconnect.png",
+      "sha256": "8b3b301461b5940a0738f85812862b30f4a11c56a458afa3c0b17915b42c0fc1"
+    },
+    {
+      "file": "src/main/resources/assets/arcane_cataclysm/textures/item/grimoire_of_cataclysm.png",
+      "sha256": "7fffed4a27a7eb088446a60f302e3357ded6c2039f1246df159a8b8943615364"
+    },
+    {
+      "file": "src/main/resources/data/arcane_cataclysm/damage_type/cataclysm.json",
+      "sha256": "c13acc51404db7effcf364ad26f00403b9dc9485d88309cf197a85dfe4286ed7"
+    },
+    {
+      "file": "src/main/resources/data/arcane_cataclysm/damage_type/end_of_all.json",
+      "sha256": "7eeb5e2e712e66f46816eeb57a58cdb241363580f410d2e2a71c51858444647c"
+    },
+    {
+      "file": "src/main/resources/data/arcane_cataclysm/tags/block/destruction_immune.json",
+      "sha256": "e4f64cdb284fc5ffc949c394f548a3c0231910f6de0b7615a98b3c8f914c85e8"
+    },
+    {
+      "file": "src/main/resources/data/minecraft/tags/damage_type/bypasses_armor.json",
+      "sha256": "5ed0d4e4f3081a2e5b21d3385d24c9ecd4bc0ef5738dda46ff5b4539b72875cf"
+    },
+    {
+      "file": "src/main/resources/data/minecraft/tags/damage_type/bypasses_cooldown.json",
+      "sha256": "5ed0d4e4f3081a2e5b21d3385d24c9ecd4bc0ef5738dda46ff5b4539b72875cf"
+    },
+    {
+      "file": "src/main/resources/data/minecraft/tags/damage_type/bypasses_enchantments.json",
+      "sha256": "5ed0d4e4f3081a2e5b21d3385d24c9ecd4bc0ef5738dda46ff5b4539b72875cf"
+    },
+    {
+      "file": "src/main/resources/data/minecraft/tags/damage_type/bypasses_invulnerability.json",
+      "sha256": "731db528ae3e450e0d84b4b390417be79958849a6d66fa75a4d2b2af668419ca"
+    },
+    {
+      "file": "src/main/resources/data/minecraft/tags/damage_type/bypasses_resistance.json",
+      "sha256": "5ed0d4e4f3081a2e5b21d3385d24c9ecd4bc0ef5738dda46ff5b4539b72875cf"
+    },
+    {
+      "file": "src/main/resources/data/minecraft/tags/damage_type/bypasses_shield.json",
+      "sha256": "5ed0d4e4f3081a2e5b21d3385d24c9ecd4bc0ef5738dda46ff5b4539b72875cf"
+    },
+    {
+      "file": "src/main/resources/pack.mcmeta",
+      "sha256": "52492bb2b0c6b6d8256a2e847c263c5498fe8b002388884db794ba7df3a21f36"
+    }
+  ]
+}
