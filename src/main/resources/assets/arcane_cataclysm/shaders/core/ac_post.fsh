@@ -6,6 +6,7 @@ uniform vec4 FxParams; // spell, time/impact, astral mix, impact flash
 uniform vec4 FxColor2; // signature color, bloom amount
 uniform float FxTime;
 uniform vec2 FxScreen;
+uniform vec4 FxImpact; // 0.7.0: ticks after impact, bounded power, glitch envelope, shake envelope
 in vec2 texCoord;
 in vec4 vertexColor;
 out vec4 fragColor;
@@ -111,10 +112,18 @@ vec3 astral(vec2 p,int spell,float phase){
 vec3 bright(vec2 uv){vec3 c=texture(Sampler0,uv).rgb;return c*smoothstep(.65,1.2,max(c.r,max(c.g,c.b)));}
 void main(){
     vec2 uv=vec2(texCoord.x,1.-texCoord.y),p=(texCoord-.5)*vec2(FxScreen.x/FxScreen.y,1.);
-    float after=FxParams.y-1.;vec2 q=uv-.5;
-    float shock=sin(length(q)*44.-after*38.)*exp(-max(0.,after)*6.)*.003*step(0.,after);
+    float after=FxParams.y-1.;vec2 q=uv-.5;float hit=step(0.,after);
+    // 0.7.0: two hard shockfronts - a fast strike plus one echo - instead of one barely visible ripple.
+    float shock=sin(length(q)*44.-after*38.)*exp(-max(0.,after)*3.2)*.016*hit;
+    shock+=sin(length(q)*30.-(after-6.)*26.)*exp(-abs(after-6.)*.8)*.010*step(6.,after);
+    // 0.7.0: radial chromatic aberration from the shake envelope, with a charge shimmer right before impact.
+    float caEnv=max(FxImpact.w*.008,FxImpact.z*.005)+.0035*smoothstep(.82,1.,min(1.,FxParams.y))*(1.-hit);
+    vec2 caDir=q*vec2(FxScreen.x/FxScreen.y,1.);
     vec2 sampleUV=clamp(uv+normalize(q+vec2(.0001))*shock,vec2(.001),vec2(.999));
-    vec3 world=texture(Sampler0,sampleUV).rgb;
+    vec3 world;
+    world.r=texture(Sampler0,clamp(sampleUV+caDir*caEnv,vec2(.001),vec2(.999))).r;
+    world.g=texture(Sampler0,sampleUV).g;
+    world.b=texture(Sampler0,clamp(sampleUV-caDir*caEnv,vec2(.001),vec2(.999))).b;
     vec2 pixel=1./FxScreen;vec3 bloom=vec3(0.);
     for(int i=0;i<8;i++){
         float a=float(i)*PI/4.;vec2 off=vec2(cos(a),sin(a))*pixel;
@@ -123,6 +132,13 @@ void main(){
     float grade=1.-.24*smoothstep(.1,.8,min(1.,FxParams.y));
     if(FxParams.y>1.)grade=1.;world*=grade;
     world+=bloom*FxColor2.a;
+    // 0.7.0: impact flash with a fast exposure punch and a short radial speed pull toward the centre.
+    float flash=exp(-max(0.,after)*.42)*hit*FxParams.w;
+    world=mix(world,vec3(1.,.96,.9)+FxColor2.rgb*.4,clamp(flash,0.,.85));
+    if(flash>.02){vec3 pull=vec3(0.);
+        for(int k=1;k<=4;k++){float fstep=float(k)*.25;
+            pull+=texture(Sampler0,clamp(sampleUV-q*fstep*vec2(FxScreen.x/FxScreen.y,1.)*.09,vec2(.001),vec2(.999))).rgb;}
+        world=mix(world,pull*.25,clamp(flash*.8,0.,.7));}
     world=world/(vec3(1.)+world*.22);
     world=mix(world,world+FxColor2.rgb*.18,FxParams.w);
     if(FxParams.z>.001){vec3 vision=astral(p,int(FxParams.x+.5),FxParams.y);vision=vec3(1.)-exp(-vision*1.2);world=mix(world,vision,FxParams.z);}

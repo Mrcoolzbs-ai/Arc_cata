@@ -405,11 +405,11 @@ vec3 theatre(vec2 uv,int id){
  if(id==6){primary=vec3(1.9,.48,.035);accent=vec3(.65,.045,.02);}
  if(id==7){primary=vec3(.7,.30,1.7);accent=vec3(.13,.55,1.2);}
  if(id==8){primary=vec3(2.,1.2,.25);accent=vec3(1.1,.13,.015);}
- // Smoothly connected close reveal -> orbiting wide -> rising hero -> final dive.
- float reveal=ease(.10,.32,phase),hero=ease(.32,.69,phase),dive=ease(.75,.99,phase);
+ // 0.7.0: snappier blocking - the reveal lands sooner, the final dive is shorter and much harder.
+ float reveal=ease(.08,.26,phase),hero=ease(.26,.60,phase),dive=ease(.70,.94,phase);
  float angle=mix(-.38,.42,hero)+float(id)*.12;
- float radius=mix(32.,37.,reveal)-dive*6.;
- float eyeY=mix(4.,12.,hero)-dive*3.;
+ float radius=mix(32.,37.,reveal)-dive*10.;
+ float eyeY=mix(4.,12.,hero)-dive*4.;
  ro=vec3(sin(angle)*radius,eyeY,-cos(angle)*radius);
  vec3 focus=vec3(0,mix(11.,14.,hero)-dive*3.,0);
  if(id==1){ro.y=8.+hero*11.;focus.y=12.-dive*4.;radius=36.;ro.xz=vec2(sin(angle),-cos(angle))*radius;}
@@ -420,7 +420,7 @@ vec3 theatre(vec2 uv,int id){
  if(id==6){ro=vec3(-22.+hero*12.,6.+hero*7.,-28.);focus=vec3(0,6.,0);}
  if(id==7||id==8){focus=vec3(0,11.,0);ro=vec3(sin(angle)*34.,10.+hero*6.,-cos(angle)*34.);}
  vec3 forward=normalize(focus-ro),right=normalize(cross(forward,vec3(0,1,0))),up=cross(right,forward);
- float lens=mix(1.19,.95,reveal)+hero*.045;
+ float lens=mix(1.19,.95,reveal)+hero*.045+dive*.06;
  rd=normalize(forward*lens+right*uv.x+up*uv.y);
  opaqueDepth=100000.;col=background(rd,id);
  floorScene();
@@ -440,13 +440,17 @@ void main(){
  float fracture=FxImpact.z,force=clamp(FxImpact.y/2.1,.35,1.8);
  float clock=floor(max(0.,FxImpact.x)*1.6),row=floor(sampleUV.y*43.);
  float torn=step(.77,hash1(row*17.+clock*31.));
- float jitter=(hash1(row+clock*71.)-.5)*torn*.070*fracture*force;
+ float jitter=(hash1(row+clock*71.)-.5)*torn*.085*fracture*force;
  vec2 warped=clamp(sampleUV+vec2(jitter,0),vec2(.002),vec2(.998));
- float split=(.0018+.009*torn)*fracture*force;
+ float split=(.0024+.013*torn)*fracture*force;
+ // 0.7.0: full-frame radial chromatic pull while the impact tremor is live, plus a pre-impact charge shimmer.
+ float radialCA=(.0045*FxImpact.w+.0018*exp(-max(0.,FxImpact.x)*.30)*step(0.,FxImpact.x))*force;
+ radialCA+=.0012*ease(.88,1.,min(1.,FxParams.y))*step(FxParams.y,1.);
+ vec2 radialDir=(sampleUV-.5)*radialCA;
  vec3 world;
- world.r=texture(Sampler0,clamp(warped+vec2(split,0),vec2(.002),vec2(.998))).r;
+ world.r=texture(Sampler0,clamp(warped+vec2(split,0)+radialDir,vec2(.002),vec2(.998))).r;
  world.g=texture(Sampler0,warped).g;
- world.b=texture(Sampler0,clamp(warped-vec2(split,0),vec2(.002),vec2(.998))).b;
+ world.b=texture(Sampler0,clamp(warped-vec2(split,0)-radialDir,vec2(.002),vec2(.998))).b;
  float fineRow=floor(sampleUV.y*FxScreen.y/3.);
  float shards=step(.989,hash1(floor(sampleUV.x*90.)+fineRow*113.+clock*271.));
  vec3 prism=mix(vec3(.10,1.,.90),vec3(.95,.10,1.),step(.5,hash1(row+clock)));
@@ -460,10 +464,20 @@ void main(){
  float p=FxParams.y,pre=1.-ease(.98,1.06,p);
  world*=mix(vec3(1),vec3(.79,.85,1.),pre*.55);
  world+=FxColor2.rgb*.022*pre;
- float impact=exp(-max(0.,p-1.)*60.)*step(1.,p)*FxParams.w;
- world=mix(world,vec3(1.,.94,.82),impact*.32);
+ // 0.7.0: hotter, faster flash with a directional exposure spike.
+ float impact=exp(-max(0.,p-1.)*26.)*step(1.,p)*FxParams.w;
+ world=mix(world,vec3(1.,.94,.82),clamp(impact,0.,1.)*.45);
+ world*=1.+impact*.30*(1.-ease(0.,.9,length(uv)));
  vec3 scene=world;
  if(blend>.001)scene=mix(world,theatre(uv,id),blend);
+ // 0.7.0: radial speed streaks on the first half-second after the strike.
+ float speed=exp(-max(0.,FxImpact.x)*.14)*step(0.,FxImpact.x)*force;
+ if(speed>.01){
+  float ang=atan(uv.y,uv.x),rr=length(uv);
+  float streak=pow(max(0.,sin(ang*44.+hash1(floor(ang*7.63))*9.)),24.);
+  scene+=FxColor2.rgb*streak*smoothstep(.28,.6,rr)*(1.-smoothstep(1.1,1.6,rr))*speed*.55;
+ }
  float vignette=1.-.18*ease(.26,1.1,length(uv));scene*=vignette;
+ scene*=1.-.10*clamp(FxImpact.w,0.,1.)*step(0.,FxImpact.x);
  fragColor=vec4(scene,1.)*ColorModulator;
 }

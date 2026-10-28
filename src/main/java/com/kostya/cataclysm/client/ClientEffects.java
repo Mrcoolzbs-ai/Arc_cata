@@ -95,9 +95,23 @@ public final class ClientEffects {
             double distance=mc().player.position().distanceTo(f.packet.target());amount+=ImpactDynamics.shake(age,ImpactDynamics.power(f.spell.tier(),f.spell.radius,f.packet.scale()),distance);
         }return Math.min(amount,3.8);
     }
+    /** 0.7.0: brief hard directional kick on impact (bounded like shake, never server-visible). */
+    public static double shove(float partial){
+        if(!ClientOptions.SHAKE.get()||mc().player==null)return 0;
+        double amount=0;for(Fx f:ACTIVE){double age=f.age(partial)-f.spell.impact;if(age<0||age>=6)continue;
+            double distance=mc().player.position().distanceTo(f.packet.target());
+            amount+=ImpactDynamics.kick(age,ImpactDynamics.power(f.spell.tier(),f.spell.radius,f.packet.scale()))*Math.min(1,160/Math.max(1,distance));
+        }return Math.min(amount,3.2);
+    }
+    private static Vec3 nearestImpact(){
+        if(mc().player==null)return new Vec3(0,0,0);
+        Vec3 best=mc().player.position();double bd=Double.MAX_VALUE;
+        for(Fx f:ACTIVE){double d=mc().player.position().distanceToSqr(f.packet.target());if(d<bd){bd=d;best=f.packet.target();}}
+        return best;
+    }
     public static View view(Camera camera,float partial){
         if(SpellFilm.running())return null;
-        Fx f=cinematic();double shake=shake(partial);double t=mc().level==null?0:mc().level.getGameTime()+partial;
+        Fx f=cinematic();double shake=shake(partial),shove=shove(partial);double t=mc().level==null?0:mc().level.getGameTime()+partial;
         Vec3 base=camera.getPosition();float yaw=camera.getYRot(),pitch=camera.getXRot(),roll=camera.getRoll();
         if(f!=null){
             if(InvocationDirector.supports(f.spell)){
@@ -121,12 +135,23 @@ public final class ClientEffects {
             yaw+=Mth.wrapDegrees(desiredYaw-yaw)*(float)blend;pitch+=(desiredPitch-pitch)*(float)blend;base=pos;
             roll=(float)(Math.sin(progress*Math.PI*2)*1.2*blend);
             }
-        }else if(shake<.001)return null;
-        base=base.add(Math.sin(t*2.7)*shake*.14,Math.cos(t*3.1)*shake*.10,Math.sin(t*3.7)*shake*.12);
-        return new View(base,yaw+(float)(Math.sin(t*2.3)*shake*.4),pitch+(float)(Math.cos(t*3.3)*shake*.3),roll+(float)(Math.sin(t*2)*shake*.55));
+        }else if(shake<.001&&shove<.001)return null;
+        // 0.7.0 punch pass: a short directional shove from the impact, then a high-frequency tremor.
+        if(shove>.001){Vec3 away=base.subtract(nearestImpact());
+            if(away.lengthSqr()>.01)base=base.add(away.normalize().scale(shove*.14));}
+        base=base.add(Math.sin(t*5.1)*shake*.11,Math.cos(t*6.3)*shake*.085,Math.sin(t*4.4)*shake*.10);
+        return new View(base,yaw+(float)(Math.sin(t*4.7)*shake*.5),pitch+(float)(Math.cos(t*5.9)*shake*.42),roll+(float)(Math.sin(t*3.8)*shake*.7));
     }
     public static double smooth(double p){p=Math.max(0,Math.min(1,p));return p*p*(3-2*p);}
-    @SubscribeEvent public static void fov(ViewportEvent.ComputeFov e){var f=cinematic();if(f!=null&&!SpellFilm.running())e.setFOV(e.getFOV()*(InvocationDirector.supports(f.spell)?InvocationDirector.fov(f,(float)e.getPartialTick()):((f.spell.cosmic()?.89:1.08)+.035*Math.sin(f.age*.012))));}
+    @SubscribeEvent public static void fov(ViewportEvent.ComputeFov e){
+        var f=cinematic();if(f!=null&&!SpellFilm.running()){e.setFOV(e.getFOV()*(InvocationDirector.supports(f.spell)?InvocationDirector.fov(f,(float)e.getPartialTick()):((f.spell.cosmic()?.89:1.08)+.035*Math.sin(f.age*.012))));return;}
+        // 0.7.0: any nearby impact punches the FOV open for a few ticks.
+        if(mc().player==null)return;float partial=(float)e.getPartialTick();double punch=0;
+        for(Fx fx:ACTIVE){double after=fx.age(partial)-fx.spell.impact;if(after<0||after>=10)continue;
+            double d=mc().player.position().distanceTo(fx.packet.target());
+            punch+=ImpactDynamics.kick(after,ImpactDynamics.power(fx.spell.tier(),fx.spell.radius,fx.packet.scale()))*Math.min(1,160/Math.max(1,d));}
+        if(punch>.01)e.setFOV(e.getFOV()*(1+Math.min(punch,.9)*.16));
+    }
     @SubscribeEvent public static void fog(ViewportEvent.ComputeFogColor e){
         if(ACTIVE.isEmpty())return;Fx f=ACTIVE.getLast();float mix=.10f*(float)Math.sin(Math.min(1,f.age/(double)f.spell.duration)*Math.PI);
         e.setRed(Mth.lerp(mix,e.getRed(),((f.spell.color>>16)&255)/255f));e.setGreen(Mth.lerp(mix,e.getGreen(),((f.spell.color>>8)&255)/255f));e.setBlue(Mth.lerp(mix,e.getBlue(),(f.spell.color&255)/255f));

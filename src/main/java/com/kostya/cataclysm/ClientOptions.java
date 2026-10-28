@@ -6,6 +6,6 @@ public final class ClientOptions {
     public static final ModConfigSpec.BooleanValue CAMERA,SHAKE,FLASH,POST,ASTRAL,GLITCH;
     public static final ModConfigSpec.DoubleValue BLOOM;
     public static final ModConfigSpec.IntValue DENSITY;
-    static {var b=new ModConfigSpec.Builder();CAMERA=b.define("cinematicCamera",true);SHAKE=b.define("screenShake",true);FLASH=b.define("screenFlash",true);DENSITY=b.defineInRange("effectDensityPercent",100,10,100);GLITCH=b.comment("Brief chromatic impact tears for the first five spells. Also disabled by screenFlash=false.").define("impactGlitch",true);POST=b.define("postProcessing",true);ASTRAL=b.define("astralScenes",true);BLOOM=b.defineInRange("bloomStrength",.55,0.,1.5);SPEC=b.build();}
+    static {var b=new ModConfigSpec.Builder();CAMERA=b.define("cinematicCamera",true);SHAKE=b.define("screenShake",true);FLASH=b.define("screenFlash",true);DENSITY=b.defineInRange("effectDensityPercent",100,10,100);GLITCH=b.comment("Brief chromatic impact tears and radial aberration on impact. Also disabled by screenFlash=false.").define("impactGlitch",true);POST=b.define("postProcessing",true);ASTRAL=b.define("astralScenes",true);BLOOM=b.defineInRange("bloomStrength",.55,0.,1.5);SPEC=b.build();}
     private ClientOptions(){}
 }
