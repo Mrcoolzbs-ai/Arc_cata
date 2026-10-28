@@ -116,8 +116,8 @@ void main(){
     // 0.7.0: two hard shockfronts - a fast strike plus one echo - instead of one barely visible ripple.
     float shock=sin(length(q)*44.-after*38.)*exp(-max(0.,after)*3.2)*.016*hit;
     shock+=sin(length(q)*30.-(after-6.)*26.)*exp(-abs(after-6.)*.8)*.010*step(6.,after);
-    // 0.7.0: radial chromatic aberration from the shake envelope, with a charge shimmer right before impact.
-    float caEnv=max(FxImpact.w*.008,FxImpact.z*.005)+.0035*smoothstep(.82,1.,min(1.,FxParams.y))*(1.-hit);
+    // 0.7.1: reference-tuned vs The Shooting Star frames - an extreme full-frame RGB split on the strike, gone in ~1s.
+    float caEnv=max(FxImpact.w*.030,FxImpact.z*.095)+.0035*smoothstep(.82,1.,min(1.,FxParams.y))*(1.-hit);
     vec2 caDir=q*vec2(FxScreen.x/FxScreen.y,1.);
     vec2 sampleUV=clamp(uv+normalize(q+vec2(.0001))*shock,vec2(.001),vec2(.999));
     vec3 world;
@@ -137,8 +137,10 @@ void main(){
     world=mix(world,vec3(1.,.96,.9)+FxColor2.rgb*.4,clamp(flash,0.,.85));
     if(flash>.02){vec3 pull=vec3(0.);
         for(int k=1;k<=4;k++){float fstep=float(k)*.25;
-            pull+=texture(Sampler0,clamp(sampleUV-q*fstep*vec2(FxScreen.x/FxScreen.y,1.)*.09,vec2(.001),vec2(.999))).rgb;}
-        world=mix(world,pull*.25,clamp(flash*.8,0.,.7));}
+            pull+=texture(Sampler0,clamp(sampleUV-q*fstep*vec2(FxScreen.x/FxScreen.y,1.)*.14,vec2(.001),vec2(.999))).rgb;}
+        world=mix(world,pull*.33,clamp(flash*.9,0.,.75));}
+    // 0.7.1: reference look - the frame desaturates toward the edges while the RGB split is at its peak.
+    world=mix(world,vec3(dot(world,vec3(.299,.587,.114))),clamp(caEnv*2.2*smoothstep(.05,.8,length(q)),0.,.45));
     world=world/(vec3(1.)+world*.22);
     world=mix(world,world+FxColor2.rgb*.18,FxParams.w);
     if(FxParams.z>.001){vec3 vision=astral(p,int(FxParams.x+.5),FxParams.y);vision=vec3(1.)-exp(-vision*1.2);world=mix(world,vision,FxParams.z);}

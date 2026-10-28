@@ -440,12 +440,12 @@ void main(){
  float fracture=FxImpact.z,force=clamp(FxImpact.y/2.1,.35,1.8);
  float clock=floor(max(0.,FxImpact.x)*1.6),row=floor(sampleUV.y*43.);
  float torn=step(.77,hash1(row*17.+clock*31.));
- float jitter=(hash1(row+clock*71.)-.5)*torn*.085*fracture*force;
+ float jitter=(hash1(row+clock*71.)-.5)*torn*.12*fracture*force;
  vec2 warped=clamp(sampleUV+vec2(jitter,0),vec2(.002),vec2(.998));
- float split=(.0024+.013*torn)*fracture*force;
- // 0.7.0: full-frame radial chromatic pull while the impact tremor is live, plus a pre-impact charge shimmer.
- float radialCA=(.0045*FxImpact.w+.0018*exp(-max(0.,FxImpact.x)*.30)*step(0.,FxImpact.x))*force;
- radialCA+=.0012*ease(.88,1.,min(1.,FxParams.y))*step(FxParams.y,1.);
+ float split=(.006+.026*torn)*fracture*force;
+ // 0.7.1: reference-tuned (The Shooting Star): up to ~10% frame-width RGB split on the strike frame.
+ float radialCA=(.030*FxImpact.w+.105*exp(-max(0.,FxImpact.x)*.30)*step(0.,FxImpact.x))*force;
+ radialCA+=.004*ease(.88,1.,min(1.,FxParams.y))*step(FxParams.y,1.);
  vec2 radialDir=(sampleUV-.5)*radialCA;
  vec3 world;
  world.r=texture(Sampler0,clamp(warped+vec2(split,0)+radialDir,vec2(.002),vec2(.998))).r;
@@ -455,7 +455,7 @@ void main(){
  float shards=step(.989,hash1(floor(sampleUV.x*90.)+fineRow*113.+clock*271.));
  vec3 prism=mix(vec3(.10,1.,.90),vec3(.95,.10,1.),step(.5,hash1(row+clock)));
  prism=mix(prism,FxColor2.rgb,.40);
- world+=prism*(torn*.18+shards*.48)*fracture*force;
+ world+=prism*(torn*.22+shards*.60)*fracture*force;
  float scan=cos(sampleUV.y*FxScreen.y*1.57+clock)*.035*fracture;
  world*=1.+scan;
  // A single exposure dip replaces persistent rapid full-screen strobing.
@@ -477,6 +477,8 @@ void main(){
   float streak=pow(max(0.,sin(ang*44.+hash1(floor(ang*7.63))*9.)),24.);
   scene+=FxColor2.rgb*streak*smoothstep(.28,.6,rr)*(1.-smoothstep(1.1,1.6,rr))*speed*.55;
  }
+ // 0.7.1: reference look - the frame desaturates while the RGB split is at its peak.
+ scene=mix(scene,vec3(dot(scene,vec3(.299,.587,.114))),clamp(radialCA*5.,0.,.4));
  float vignette=1.-.18*ease(.26,1.1,length(uv));scene*=vignette;
  scene*=1.-.10*clamp(FxImpact.w,0.,1.)*step(0.,FxImpact.x);
  fragColor=vec4(scene,1.)*ColorModulator;

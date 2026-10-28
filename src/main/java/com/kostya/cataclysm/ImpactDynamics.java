@@ -23,9 +23,9 @@ public final class ImpactDynamics {
         return Math.min(1.6,(.45+.55*power)*Math.exp(-after/(4.5+power*1.5))+.22*Math.exp(-Math.pow((after-16)/6.,2)));
     }
     public static double glitch(double after){
-        if(after<0||after>=26)return 0;
-        // Initial fracture, then a smaller echo. Exact zero outside the impact window.
-        return Math.min(1,Math.exp(-after/4.2)+.34*Math.exp(-Math.pow((after-7)/2.2,2)))*Math.pow(1-after/26,2);
+        if(after<0||after>=32)return 0;
+        // 0.7.1: longer, stronger fracture window so the reference-tuned RGB split stays alive ~1.5s.
+        return Math.min(1,Math.exp(-after/7.5)+.42*Math.exp(-Math.pow((after-8)/3.,2)))*Math.pow(1-after/32,2);
     }
     private ImpactDynamics(){}
 }
