@@ -405,11 +405,11 @@ vec3 theatre(vec2 uv,int id){
  if(id==6){primary=vec3(1.9,.48,.035);accent=vec3(.65,.045,.02);}
  if(id==7){primary=vec3(.7,.30,1.7);accent=vec3(.13,.55,1.2);}
  if(id==8){primary=vec3(2.,1.2,.25);accent=vec3(1.1,.13,.015);}
- // Smoothly connected close reveal -> orbiting wide -> rising hero -> final dive.
- float reveal=ease(.10,.32,phase),hero=ease(.32,.69,phase),dive=ease(.75,.99,phase);
+ // 0.7.0: snappier blocking - the reveal lands sooner, the final dive is shorter and much harder.
+ float reveal=ease(.08,.26,phase),hero=ease(.26,.60,phase),dive=ease(.70,.94,phase);
  float angle=mix(-.38,.42,hero)+float(id)*.12;
- float radius=mix(32.,37.,reveal)-dive*6.;
- float eyeY=mix(4.,12.,hero)-dive*3.;
+ float radius=mix(32.,37.,reveal)-dive*10.;
+ float eyeY=mix(4.,12.,hero)-dive*4.;
  ro=vec3(sin(angle)*radius,eyeY,-cos(angle)*radius);
  vec3 focus=vec3(0,mix(11.,14.,hero)-dive*3.,0);
  if(id==1){ro.y=8.+hero*11.;focus.y=12.-dive*4.;radius=36.;ro.xz=vec2(sin(angle),-cos(angle))*radius;}
@@ -420,7 +420,7 @@ vec3 theatre(vec2 uv,int id){
  if(id==6){ro=vec3(-22.+hero*12.,6.+hero*7.,-28.);focus=vec3(0,6.,0);}
  if(id==7||id==8){focus=vec3(0,11.,0);ro=vec3(sin(angle)*34.,10.+hero*6.,-cos(angle)*34.);}
  vec3 forward=normalize(focus-ro),right=normalize(cross(forward,vec3(0,1,0))),up=cross(right,forward);
- float lens=mix(1.19,.95,reveal)+hero*.045;
+ float lens=mix(1.19,.95,reveal)+hero*.045+dive*.06;
  rd=normalize(forward*lens+right*uv.x+up*uv.y);
  opaqueDepth=100000.;col=background(rd,id);
  floorScene();
@@ -439,31 +439,67 @@ void main(){
  // Short, signature-colored impact fractures; no effect before impact or in reduced-flash mode.
  float fracture=FxImpact.z,force=clamp(FxImpact.y/2.1,.35,1.8);
  float clock=floor(max(0.,FxImpact.x)*1.6),row=floor(sampleUV.y*43.);
- float torn=step(.77,hash1(row*17.+clock*31.));
- float jitter=(hash1(row+clock*71.)-.5)*torn*.070*fracture*force;
+ float torn=step(.94,hash1(row*17.+clock*31.)); // 0.8.1: visibility first - far fewer torn rows
+ float jitter=(hash1(row+clock*71.)-.5)*torn*.03*fracture*force;
  vec2 warped=clamp(sampleUV+vec2(jitter,0),vec2(.002),vec2(.998));
- float split=(.0018+.009*torn)*fracture*force;
+ float split=(.003+.010*torn)*fracture*force;
+ // 0.8.1: the split is halved again - a whisper at the strike, never a veil.
+ float radialCA=(.012*FxImpact.w+.045*exp(-max(0.,FxImpact.x)*.55)*step(0.,FxImpact.x))*force;
+ radialCA+=.004*ease(.88,1.,min(1.,FxParams.y))*step(FxParams.y,1.);
+ vec2 radialDir=(sampleUV-.5)*radialCA;
  vec3 world;
- world.r=texture(Sampler0,clamp(warped+vec2(split,0),vec2(.002),vec2(.998))).r;
+ world.r=texture(Sampler0,clamp(warped+vec2(split,0)+radialDir,vec2(.002),vec2(.998))).r;
  world.g=texture(Sampler0,warped).g;
- world.b=texture(Sampler0,clamp(warped-vec2(split,0),vec2(.002),vec2(.998))).b;
+ world.b=texture(Sampler0,clamp(warped-vec2(split,0)-radialDir,vec2(.002),vec2(.998))).b;
+ // 0.7.2: painted signature fringes - saturated per-spell bands like the reference frames.
+ world+=primary*smoothstep(.45,1.,abs(sampleUV.x-.5)*2.)*radialCA*.7+accent*smoothstep(.45,1.,abs(sampleUV.y-.5)*2.)*radialCA*.7;
  float fineRow=floor(sampleUV.y*FxScreen.y/3.);
  float shards=step(.989,hash1(floor(sampleUV.x*90.)+fineRow*113.+clock*271.));
- vec3 prism=mix(vec3(.10,1.,.90),vec3(.95,.10,1.),step(.5,hash1(row+clock)));
+ vec3 prism=mix(primary,accent,step(.5,hash1(row+clock)));
  prism=mix(prism,FxColor2.rgb,.40);
- world+=prism*(torn*.18+shards*.48)*fracture*force;
- float scan=cos(sampleUV.y*FxScreen.y*1.57+clock)*.035*fracture;
+ world+=prism*(torn*.10+shards*.18)*fracture*force;
+ float scan=cos(sampleUV.y*FxScreen.y*1.57+clock)*.015*fracture;
  world*=1.+scan;
  // A single exposure dip replaces persistent rapid full-screen strobing.
- world*=1.-.17*fracture*step(2.,FxImpact.x);
+ world*=1.-.07*fracture*step(2.,FxImpact.x);
  // World insert grading: keep the real terrain visible, only cool the shadows.
  float p=FxParams.y,pre=1.-ease(.98,1.06,p);
  world*=mix(vec3(1),vec3(.79,.85,1.),pre*.55);
  world+=FxColor2.rgb*.022*pre;
- float impact=exp(-max(0.,p-1.)*60.)*step(1.,p)*FxParams.w;
- world=mix(world,vec3(1.,.94,.82),impact*.32);
+ // 0.7.3: the flash re-fires on every strike of the barrage.
+ float impact=exp(-max(0.,FxImpact.x)*26.)*step(0.,FxImpact.x)*FxParams.w;
+ world=mix(world,vec3(1.,.94,.82),clamp(impact,0.,1.)*.45);
+ world*=1.+impact*.30*(1.-ease(0.,.9,length(uv)));
  vec3 scene=world;
  if(blend>.001)scene=mix(world,theatre(uv,id),blend);
+ // 0.7.0: radial speed streaks on the first half-second after the strike.
+ float speed=exp(-max(0.,FxImpact.x)*.38)*step(0.,FxImpact.x)*force;
+ if(speed>.01){
+  float ang=atan(uv.y,uv.x),rr=length(uv);
+  float streak=pow(max(0.,sin(ang*44.+hash1(floor(ang*7.63))*9.)),24.);
+  vec3 streakCol=mix(FxColor2.rgb,accent,step(.5,hash1(floor(ang*7.63)+clock)));
+  scene+=streakCol*streak*smoothstep(.28,.6,rr)*(1.-smoothstep(1.1,1.6,rr))*speed*.45;
+ }
+ // 0.7.1: reference look - the frame desaturates while the RGB split is at its peak.
+ scene=mix(scene,vec3(dot(scene,vec3(.299,.587,.114))),clamp(radialCA*2.,0.,.10));
+ // 0.7.5: TSS-style impact frames - one stylized frame per tick for six ticks after each strike (ink/inverted/accent).
+ float ifStep=FxImpact.x>=0.?floor(min(FxImpact.x,7.)):-1.; // 0.7.6: negative clock = no strike yet, no impact frame
+ int ifMode=ifStep==0.?3:ifStep==1.?1:ifStep==2.?3:ifStep==3.?1:ifStep==4.?0:(ifStep==5.?3:-1);
+ if(ifMode>=0&&FxParams.w>0.){
+  float ifLum=dot(scene,vec3(.299,.587,.114));vec3 ifFrame;
+  if(ifMode==1)ifFrame=vec3(1.)-scene;
+  else{float ink=smoothstep(.18,.72,ifLum);
+   ifFrame=mix(vec3(.015,.01,.02),primary,ink);
+   if(ifMode==3)ifFrame=mix(ifFrame,accent,step(.5,ifLum)*.55);}
+  scene=mix(scene,ifFrame,.92);}
+ // 0.7.5: the hit-stop beat and the TSS zoom blur, straight from the reference anatomy.
+ scene=mix(scene,vec3(dot(scene,vec3(.299,.587,.114))),.24*step(0.,FxImpact.x)*(1.-smoothstep(6.,12.,FxImpact.x)));
+ float zoomK=.38*smoothstep(0.,.6,FxImpact.x)*(1.-smoothstep(6.,14.,FxImpact.x));
+ if(zoomK>.02){vec3 zoom=scene;
+  for(int k=1;k<=5;k++){float zs=1.-float(k)*.012*zoomK;
+   zoom+=texture(Sampler0,clamp((uv-.5)*zs+.5,vec2(.002),vec2(.998))).rgb;}
+  scene=zoom/6.;}
  float vignette=1.-.18*ease(.26,1.1,length(uv));scene*=vignette;
+ scene*=1.-.10*clamp(FxImpact.w,0.,1.)*step(0.,FxImpact.x);
  fragColor=vec4(scene,1.)*ColorModulator;
 }

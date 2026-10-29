@@ -17,19 +17,21 @@ public final class InvocationDirector {
         return (float)(ClientEffects.smooth((age-in)/32.)*(1-ClientEffects.smooth((age-out)/32.)));
     }
     public static double fov(ClientEffects.Fx f,float partial){
-        double age=f.age(partial),charge=age/f.spell.impact;
-        return 1.02-.12*ClientEffects.smooth(charge/.6)+.14*ClientEffects.smooth((age-f.spell.impact)/35.);
+        double age=f.age(partial),charge=age/f.spell.impact,after=age-f.spell.impact;
+        // 0.7.0: deeper pre-impact squeeze, then a fast rebound punch instead of a 35-tick drift.
+        return 1.02-.16*ClientEffects.smooth(charge/.55)+(after>=0?.20*Math.exp(-after*.12):0);
     }
     public static ClientEffects.View camera(Camera camera,ClientEffects.Fx f,float partial){
         var m=Minecraft.getInstance();double age=f.age(partial),charge=age/f.spell.impact,after=age-f.spell.impact;
-        double blend=ClientEffects.smooth(Math.min(age/22.,(f.spell.duration-age)/35.));
+        double blend=ClientEffects.smooth(Math.min(age/14.,(f.spell.duration-age)/30.));
         Vec3 eye=m.player.getEyePosition(partial),origin=f.packet.origin().add(0,1.4,0),target=f.packet.target();
         Vec3 forward=target.subtract(origin).multiply(1,0,1).normalize();if(forward.lengthSqr()<.01)forward=new Vec3(0,0,1);
         Vec3 side=new Vec3(-forward.z,0,forward.x);
-        double reveal=ClientEffects.smooth((age-18)/70.),wide=ClientEffects.smooth((age-(f.spell.impact-80))/60.);
+        // 0.7.0: reveal rises faster; the pullback starts late but accelerates hard into the impact.
+        double reveal=ClientEffects.smooth((age-16)/46.),wide=ClientEffects.smooth((age-(f.spell.impact-42))/26.);
         // Close performer / rising oblique wide / impact pullback. All real shots stay near the player.
         double orbit=Math.sin(charge*Math.PI)*1.7;
-        Vec3 desired=eye.add(side.scale(3.2+orbit+wide*2.0)).add(forward.scale(-2.5-wide*5.)).add(0,.4+reveal*3.0+wide*2.,0);
+        Vec3 desired=eye.add(side.scale(3.2+orbit+wide*2.0)).add(forward.scale(-2.5-wide*6.)).add(0,.4+reveal*3.0+wide*2.,0);
         Vec3 look=origin.lerp(target.add(0,after<0?(f.spell==Spell.STARFALL?28:20)*f.packet.scale():1,0),reveal);
         var hit=m.level.clip(new ClipContext(eye,desired,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,m.player));
         if(hit.getType()!=HitResult.Type.MISS)desired=hit.getLocation().lerp(eye,.12);
@@ -38,7 +40,10 @@ public final class InvocationDirector {
         float yaw=(float)(Math.atan2(dir.z,dir.x)*180/Math.PI-90),pitch=(float)(-Math.atan2(dir.y,dir.horizontalDistance())*180/Math.PI);
         yaw=camera.getYRot()+Mth.wrapDegrees(yaw-camera.getYRot())*(float)blend;
         pitch=Mth.lerp((float)blend,camera.getXRot(),pitch);
-        return new ClientEffects.View(pos,yaw,pitch,0);
+        // 0.7.4: a hard roll flinch that re-fires on every REAL strike of the barrage.
+        double afterHit=ClientEffects.sinceStrike(f,age);
+        double flinch=afterHit>=0&&afterHit<10?Math.sin(afterHit*.9)*Math.exp(-afterHit*.5):0;
+        return new ClientEffects.View(pos,yaw,pitch,(float)(flinch*.9*f.strikePower));
     }
     public static void title(GuiGraphics g,ClientEffects.Fx f,float age,int bar){
         InvocationHud.draw(g,f,age,bar);

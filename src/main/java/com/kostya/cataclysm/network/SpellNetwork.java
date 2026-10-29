@@ -11,6 +11,7 @@ public final class SpellNetwork {
     /** Assigned by the client mod event subscriber, never loads client classes on a server. */
     public static java.util.function.Consumer<Fx> clientReceiver=p->{};
     public static java.util.function.Consumer<Progress> progressReceiver=p->{};
+    public static java.util.function.Consumer<Strike> strikeReceiver=p->{};
     public static java.util.function.Consumer<EndState> endReceiver=p->{};
     public record EndState(long seed,int age,boolean active) implements CustomPacketPayload {
         public static final Type<EndState> TYPE=new Type<>(Cataclysm.id("end_state"));
@@ -36,6 +37,15 @@ public final class SpellNetwork {
         };
         public Type<? extends CustomPacketPayload> type(){return TYPE;}
     }
+    /** 0.7.4: fired when destroyed chunks actually flush to a viewer - the reality-synced barrage beat. */
+    public record Strike(int spell,Vec3 target,int index,float intensity) implements CustomPacketPayload {
+        public static final Type<Strike> TYPE=new Type<>(Cataclysm.id("strike"));
+        public static final StreamCodec<RegistryFriendlyByteBuf,Strike> CODEC=new StreamCodec<>(){
+            public Strike decode(RegistryFriendlyByteBuf b){return new Strike(b.readVarInt(),vec(b),b.readVarInt(),b.readFloat());}
+            public void encode(RegistryFriendlyByteBuf b,Strike p){b.writeVarInt(p.spell);vec(b,p.target);b.writeVarInt(p.index);b.writeFloat(p.intensity);}
+        };
+        public Type<? extends CustomPacketPayload> type(){return TYPE;}
+    }
     public record Select(int step) implements CustomPacketPayload {
         public static final Type<Select> TYPE=new Type<>(Cataclysm.id("select"));
         public static final StreamCodec<RegistryFriendlyByteBuf,Select> CODEC=new StreamCodec<>(){
@@ -47,10 +57,12 @@ public final class SpellNetwork {
     private static Vec3 vec(RegistryFriendlyByteBuf b){return new Vec3(b.readDouble(),b.readDouble(),b.readDouble());}
     private static void vec(RegistryFriendlyByteBuf b,Vec3 v){b.writeDouble(v.x);b.writeDouble(v.y);b.writeDouble(v.z);}
     public static void register(RegisterPayloadHandlersEvent event){
-        var r=event.registrar("4");
+        // 0.7.4: protocol 5 - the new strike channel requires matching client and server JARs.
+        var r=event.registrar("5");
         r.playToClient(EndState.TYPE,EndState.CODEC,(p,c)->c.enqueueWork(()->endReceiver.accept(p)));
         r.playToClient(Progress.TYPE,Progress.CODEC,(p,c)->c.enqueueWork(()->progressReceiver.accept(p)));
         r.playToClient(Fx.TYPE,Fx.CODEC,(p,c)->c.enqueueWork(()->clientReceiver.accept(p)));
+        r.playToClient(Strike.TYPE,Strike.CODEC,(p,c)->c.enqueueWork(()->strikeReceiver.accept(p)));
         r.playToServer(Select.TYPE,Select.CODEC,(p,c)->c.enqueueWork(()->{
             if(c.player() instanceof ServerPlayer sp && (p.step==1||p.step==-1)){
                 // At most one selection per two server ticks, including malicious packet spam.

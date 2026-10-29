@@ -107,6 +107,28 @@
         1280,
         720
       ]
+    },
+    {
+      "name": "FxImpact",
+      "type": "float",
+      "count": 4,
+      "values": [
+        -1,
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "FxColor3",
+      "type": "float",
+      "count": 4,
+      "values": [
+        1,
+        1,
+        1,
+        1
+      ]
     }
   ]
 }

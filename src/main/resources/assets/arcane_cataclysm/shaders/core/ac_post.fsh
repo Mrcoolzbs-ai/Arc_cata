@@ -6,6 +6,8 @@ uniform vec4 FxParams; // spell, time/impact, astral mix, impact flash
 uniform vec4 FxColor2; // signature color, bloom amount
 uniform float FxTime;
 uniform vec2 FxScreen;
+uniform vec4 FxImpact; // ticks since the latest barrage strike, bounded power, glitch envelope, shake envelope
+uniform vec4 FxColor3; // secondary spell color for the opposite fringe band
 in vec2 texCoord;
 in vec4 vertexColor;
 out vec4 fragColor;
@@ -111,10 +113,20 @@ vec3 astral(vec2 p,int spell,float phase){
 vec3 bright(vec2 uv){vec3 c=texture(Sampler0,uv).rgb;return c*smoothstep(.65,1.2,max(c.r,max(c.g,c.b)));}
 void main(){
     vec2 uv=vec2(texCoord.x,1.-texCoord.y),p=(texCoord-.5)*vec2(FxScreen.x/FxScreen.y,1.);
-    float after=FxParams.y-1.;vec2 q=uv-.5;
-    float shock=sin(length(q)*44.-after*38.)*exp(-max(0.,after)*6.)*.003*step(0.,after);
+    float after=FxParams.y-1.;vec2 q=uv-.5;float hit=step(0.,after);float afterHit=FxImpact.x;
+    // 0.7.3: every strike of the barrage re-fires the shockfront - two hard fronts per hit.
+    float shock=sin(length(q)*44.-afterHit*38.)*exp(-max(0.,afterHit)*3.2)*.016*hit;
+    shock+=sin(length(q)*30.-(afterHit-6.)*26.)*exp(-abs(afterHit-6.)*.8)*.010*step(6.,afterHit);
+    // 0.8.1: visibility first - the split is halved again; it must never veil the frame.
+    float caEnv=max(FxImpact.w*.012,FxImpact.z*.045)+.0035*smoothstep(.82,1.,min(1.,FxParams.y))*(1.-hit);
+    vec2 caDir=q*vec2(FxScreen.x/FxScreen.y,1.);
     vec2 sampleUV=clamp(uv+normalize(q+vec2(.0001))*shock,vec2(.001),vec2(.999));
-    vec3 world=texture(Sampler0,sampleUV).rgb;
+    vec3 world;
+    world.r=texture(Sampler0,clamp(sampleUV+caDir*caEnv,vec2(.001),vec2(.999))).r;
+    world.g=texture(Sampler0,sampleUV).g;
+    world.b=texture(Sampler0,clamp(sampleUV-caDir*caEnv,vec2(.001),vec2(.999))).b;
+    // 0.7.2: painted signature fringes - saturated per-spell bands like the reference frames, not content-derived tints.
+    world+=FxColor2.rgb*smoothstep(.34,.95,abs(q.x))*caEnv*.7+FxColor3.rgb*smoothstep(.34,.95,abs(q.y))*caEnv*.7;
     vec2 pixel=1./FxScreen;vec3 bloom=vec3(0.);
     for(int i=0;i<8;i++){
         float a=float(i)*PI/4.;vec2 off=vec2(cos(a),sin(a))*pixel;
@@ -123,9 +135,36 @@ void main(){
     float grade=1.-.24*smoothstep(.1,.8,min(1.,FxParams.y));
     if(FxParams.y>1.)grade=1.;world*=grade;
     world+=bloom*FxColor2.a;
+    // 0.7.3: the flash re-fires on every strike of the barrage, not just the first.
+    float flash=exp(-max(0.,afterHit)*.42)*hit*FxParams.w;
+    world=mix(world,vec3(1.,.96,.9)+FxColor2.rgb*.4,clamp(flash,0.,.85));
+    if(flash>.02){vec3 pull=vec3(0.);
+        for(int k=1;k<=4;k++){float fstep=float(k)*.25;
+            pull+=texture(Sampler0,clamp(sampleUV-q*fstep*vec2(FxScreen.x/FxScreen.y,1.)*.14,vec2(.001),vec2(.999))).rgb;}
+        world=mix(world,pull*.33,clamp(flash*.9,0.,.75));}
+    // 0.7.1: reference look - the frame desaturates toward the edges while the RGB split is at its peak.
+    world=mix(world,vec3(dot(world,vec3(.299,.587,.114))),clamp(caEnv*.8*smoothstep(.3,.95,length(q)),0.,.10));
     world=world/(vec3(1.)+world*.22);
     world=mix(world,world+FxColor2.rgb*.18,FxParams.w);
     if(FxParams.z>.001){vec3 vision=astral(p,int(FxParams.x+.5),FxParams.y);vision=vec3(1.)-exp(-vision*1.2);world=mix(world,vision,FxParams.z);}
+    // 0.7.5: TSS-style impact frames - one stylized frame per tick for six ticks after each strike (ink/inverted/accent).
+    float ifStep=FxImpact.x>=0.?floor(min(FxImpact.x,7.)):-1.; // 0.7.6: negative clock = no strike yet, no impact frame
+    int ifMode=ifStep==0.?3:ifStep==1.?1:ifStep==2.?3:ifStep==3.?1:ifStep==4.?0:(ifStep==5.?3:-1);
+    if(ifMode>=0&&FxColor3.a>0.){
+        float ifLum=dot(world,vec3(.299,.587,.114));vec3 ifFrame;
+        if(ifMode==1)ifFrame=vec3(1.)-world;
+        else{float ink=smoothstep(.18,.72,ifLum);
+            ifFrame=mix(vec3(.015,.01,.02),FxColor2.rgb,ink);
+            if(ifMode==3)ifFrame=mix(ifFrame,FxColor3.rgb,step(.5,ifLum)*.55);}
+        world=mix(world,ifFrame,.92*clamp(FxColor3.a,0.,1.));}
+    // 0.7.5: the hit-stop beat - the frame drains of colour for a moment after each strike.
+    world=mix(world,vec3(dot(world,vec3(.299,.587,.114))),.24*FxColor3.a*step(0.,FxImpact.x)*(1.-smoothstep(6.,12.,FxImpact.x)));
+    // 0.7.5: TSS zoom blur - the frame punches outward for a beat at each strike.
+    float zoomK=.38*FxColor3.a*smoothstep(0.,.6,FxImpact.x)*(1.-smoothstep(6.,14.,FxImpact.x));
+    if(zoomK>.02){vec3 zoom=world;
+        for(int k=1;k<=5;k++){float zs=1.-float(k)*.012*zoomK;
+            zoom+=texture(Sampler0,clamp((sampleUV-.5)*zs+.5,vec2(.001),vec2(.999))).rgb;}
+        world=zoom/6.;}
     world*=1.-.3*smoothstep(.25,.9,length(p));
     fragColor=vec4(world,1.)*ColorModulator;
 }
