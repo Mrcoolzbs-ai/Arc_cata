@@ -16,37 +16,37 @@ public final class DestructionPlan {
   double n=noise(x,z)*2-1,a=Math.atan2(dz,dx),u=d/r;int floor=terrain,hi=terrain,spike=0;boolean frost=false,scorch=spell.fiery();
   double closest=1e8;if(spell==Spell.TEMPEST_WRATH||spell==Spell.THOUSAND_BLADES)for(Vec3 p:strikes)closest=Math.min(closest,Math.hypot(x+.5-p.x,z+.5-p.z));
   switch(spell){
-   // 0.8.0 #1: a narrow sky bore with a cross of lance trenches and a central light spire.
-   case HEAVENS_LANCE->{floor=min+(int)(5+12*Math.pow(u,5));hi=max-1;if(Math.abs(d-r*.73)<Math.max(1.2,2.5*scale)&&Math.abs(Math.sin(a*4))<.22)spike=Math.max(0,terrain-floor)+(int)(34*scale);if(u<.05)spike=Math.max(spike,(int)(96*scale));}
-   // 0.8.0 #2: a lattice of blade cuts; the sharpest cuts now leave crystal blades standing.
-   case THOUSAND_BLADES->{double cut=7*scale,lines=Math.min(Math.abs(dx-dz),Math.abs(dx+dz))*.7071;closest=Math.min(closest,lines);if(closest>cut)return null;floor=(int)(center.y-48*scale*(1-closest/cut));if(closest<Math.max(.7,1.2*scale)&&Math.sin(a*11+d*.07)>.72)spike=Math.max(0,terrain-floor)+(int)(35*scale);}
-   // 0.8.0 #3: the frost grave - per-cell ice clusters and a central blue-ice monolith.
+   // 0.8.1 #1: a narrow sky bore with a cross of lance trenches - the light spire is gone.
+   case HEAVENS_LANCE->{floor=min+(int)(5+12*Math.pow(u,5));hi=max-1;}
+   // 0.8.1 #2: a lattice of blade cuts - no crystal blades stand any more.
+   case THOUSAND_BLADES->{double cut=7*scale,lines=Math.min(Math.abs(dx-dz),Math.abs(dx+dz))*.7071;closest=Math.min(closest,lines);if(closest>cut)return null;floor=(int)(center.y-48*scale*(1-closest/cut));}
+   // 0.8.0 #3: the frost grave - per-cell ice clusters and a central blue-ice monolith (0.8.1: kept unchanged).
    case GLACIAL_RAGNAROK->{if(terrain<min)return null;frost=true;int gx=Math.floorDiv(x,16),gz=Math.floorDiv(z,16);double px=gx*16+3+SpellPatterns.hash(gx,3,gz,seed)*10,pz=gz*16+3+SpellPatterns.hash(gx,5,gz,seed)*10;double q=Math.hypot(x-px,z-pz),size=3+SpellPatterns.hash(gx,8,gz,seed)*3;if(q<size)spike=(int)((1-q/size)*(22+60*SpellPatterns.hash(gx,9,gz,seed))*scale*(1-u*.4));if(u<.21)spike=Math.max(spike,(int)(64*scale*Math.sqrt(1-u*u/(.21*.21))));}
-   // 0.8.0 #4: storm - strike channels, and copper rod spires where the bolts touched down.
-   case TEMPEST_WRATH->{double branch=Math.abs(Math.sin(a*7+d*.025))*d;if(closest>12*scale&&branch>3*scale)return null;floor=(int)(center.y-42*scale*Math.max(.15,1-closest/(15*scale)));if(closest<2*scale)spike=Math.max(0,terrain-floor)+(int)((15+noise(z,x)*35)*scale);}
-   // 0.8.0 #5: meteor shower - local pocks under the fallen; some keep basalt-shelled, magma-cored meteorites.
-   case STARFALL->{floor=(int)(center.y-80*scale*(1-u*u)+n*3);hi=Math.max(terrain,(int)(center.y+r*.55));double near=1e8;for(Vec3 p:strikes)near=Math.min(near,Math.hypot(x+.5-p.x,z+.5-p.z));if(near<6*scale)floor=Math.min(floor,(int)(center.y-20*scale));if(near<2.2*scale&&SpellPatterns.hash(x,11,z,seed)>.82)spike=Math.max(0,terrain-floor)+(int)(14*scale);if(u>.83)spike=Math.max(spike,(int)(Math.sin((u-.83)/.17*Math.PI)*12*scale));}
-   // 0.8.0 #6: a fresh volcanic rift - andesite terraces, magma seam down the middle.
-   case TECTONIC_RIFT->{double len=Math.hypot(direction.x,direction.z),ux=len<.01?1:direction.x/len,uz=len<.01?0:direction.z/len;double along=dx*ux+dz*uz,across=Math.abs(-dx*uz+dz*ux+Math.sin(along*.045)*7*scale),width=42*scale*Math.sqrt(Math.max(0,1-along*along/(r*r)));if(across>width||width<.1)return null;floor=(int)(center.y-125*scale*(1-across/width));if(across/width>.78)spike=(int)(25*scale*(1-noise(x,z)));}
-   // 0.8.0 #7: a fire tide - scorch rings with magma wave crests rolling outward.
-   case INFERNO_TIDE->{double rings=Math.sin(d/Math.max(1,9*scale));floor=terrain-(int)((12+26*(1-u))*scale+rings*4*scale);if(rings>.93&&u>.25)spike=(int)(20*scale);}
-   // 0.8.0 #8: a spherical gravity void ringed by weeping obsidian.
-   case SINGULARITY->{double h=Math.sqrt(r*r-d*d);floor=(int)(center.y+18*scale-h);hi=(int)(center.y+18*scale+h);if(u>.79&&u<.86)spike=(int)(18*scale);}
-   // 0.8.0 #9: solar corona - an obsidian basin with glass rays.
-   case SOLAR_NOVA->{floor=(int)(center.y-112*scale*(1-u*u));hi=Math.max(terrain,(int)(center.y+r*.7));if(u>.88)spike=(int)(Math.max(0,Math.sin(a*23))*20*scale);}
-   // 0.8.0 #10: the cataclysm - stepped terraces, amethyst veins, a crystal ring wall.
-   case LAST_CATACLYSM->{floor=(int)(center.y-150*scale*(1-u*u));floor=(int)(Math.floor(floor/8.)*8);hi=Math.max(terrain,(int)(center.y+110*scale));if(Math.abs(d-r*.75)<4*scale&&Math.abs(Math.sin(a*6))<.15)spike=Math.max(0,terrain-floor)+(int)(70*scale);}
-   // 0.8.0 #11: withering - a barren crater where dead trunks still stand.
-   case VERDANT_RUIN->{floor=(int)(center.y-165*scale*(1-u*u));hi=terrain+(int)(19*scale);if(noise(x,z)>.86)spike=(int)(18*scale);}
-   // 0.8.0 #12: the cathedral - obsidian buttresses with purpur bands and a central spire.
-   case OBSIDIAN_CATHEDRAL->{floor=(int)(center.y-178*scale*(1-u*u));hi=Math.max(terrain,(int)(center.y+110*scale));double ring=Math.abs(d-r*.68);if(ring<5*scale&&Math.abs(Math.sin(a*8))<.22)spike=Math.max(0,terrain-floor)+(int)(110*scale);if(u<.075)spike=Math.max(0,terrain-floor)+(int)(145*scale);}
-   // 0.8.0 #13: the deluge - a prismarine trench with gravel shoals, flooded below sea level.
-   case ABYSSAL_DELUGE->{floor=(int)(center.y-195*scale*Math.pow(1-u*u,.6));hi=Math.max(terrain,0);if(u>.86&&Math.abs(Math.sin(a*17))>.97)spike=Math.max(0,terrain-floor)+(int)(70*scale);}
-   // 0.8.0 #14: world sunder - continental plates of deepslate torn along glowing faults.
-   case WORLD_SUNDER->{double fault=Math.abs(Math.sin(a*7+d*.006));floor=(int)(center.y-(85+155*(1-fault))*scale*(1-u*.65));hi=Math.max(terrain,(int)(center.y+90*scale));if(fault>.9)spike=Math.max(0,terrain-floor)+(int)(55*scale*(1-u));}
+   // 0.8.1 #4: storm strike channels - the copper rods are gone.
+   case TEMPEST_WRATH->{double branch=Math.abs(Math.sin(a*7+d*.025))*d;if(closest>12*scale&&branch>3*scale)return null;floor=(int)(center.y-42*scale*Math.max(.15,1-closest/(15*scale)));}
+   // 0.8.1 #5: meteor shower - local pocks under the fallen, nothing standing.
+   case STARFALL->{floor=(int)(center.y-80*scale*(1-u*u)+n*3);double near=1e8;for(Vec3 p:strikes)near=Math.min(near,Math.hypot(x+.5-p.x,z+.5-p.z));if(near<6*scale)floor=Math.min(floor,(int)(center.y-20*scale));}
+   // 0.8.1 #6: a fresh volcanic rift - andesite terraces, magma seam down the middle, no rim columns.
+   case TECTONIC_RIFT->{double len=Math.hypot(direction.x,direction.z),ux=len<.01?1:direction.x/len,uz=len<.01?0:direction.z/len;double along=dx*ux+dz*uz,across=Math.abs(-dx*uz+dz*ux+Math.sin(along*.045)*7*scale),width=42*scale*Math.sqrt(Math.max(0,1-along*along/(r*r)));if(across>width||width<.1)return null;floor=(int)(center.y-125*scale*(1-across/width));}
+   // 0.8.1 #7: a fire tide - scorch rings rolling outward, no magma crests standing.
+   case INFERNO_TIDE->{double rings=Math.sin(d/Math.max(1,9*scale));floor=terrain-(int)((12+26*(1-u))*scale+rings*4*scale);}
+   // 0.8.1 #8: a spherical gravity void - the weeping-obsidian ring wall is gone.
+   case SINGULARITY->{double h=Math.sqrt(r*r-d*d);floor=(int)(center.y+18*scale-h);hi=(int)(center.y+18*scale+h);}
+   // 0.8.1 #9: solar corona - an obsidian basin with a glowstone photosphere, no glass rays.
+   case SOLAR_NOVA->{floor=(int)(center.y-112*scale*(1-u*u));}
+   // 0.8.1 #10: the cataclysm - stepped terraces with amethyst veins, no crystal ring wall.
+   case LAST_CATACLYSM->{floor=(int)(center.y-150*scale*(1-u*u));floor=(int)(Math.floor(floor/8.)*8);}
+   // 0.8.1 #11: withering - a barren crater, nothing left standing.
+   case VERDANT_RUIN->{floor=(int)(center.y-165*scale*(1-u*u));hi=terrain;}
+   // 0.8.1 #12: the cathedral - a carved obsidian basin, no buttresses, no spire.
+   case OBSIDIAN_CATHEDRAL->{floor=(int)(center.y-178*scale*(1-u*u));}
+   // 0.8.1 #13: the deluge - a prismarine trench with gravel shoals, flooded below sea level, no shoal columns.
+   case ABYSSAL_DELUGE->{floor=(int)(center.y-195*scale*Math.pow(1-u*u,.6));hi=Math.max(terrain,0);}
+   // 0.8.1 #14: world sunder - continental plates torn along glowing faults, no fault columns.
+   case WORLD_SUNDER->{double fault=Math.abs(Math.sin(a*7+d*.006));floor=(int)(center.y-(85+155*(1-fault))*scale*(1-u*.65));}
    case END_OF_ALL->{return new Column(min,max-1,min-1,0,false,false,terrain);}
-   // 0.8.0 #15: rune apocalypse - glowing rune bands and obsidian monoliths.
-   case RUNE_APOCALYPSE->{floor=(int)(center.y-280*scale*(1-u*.65));hi=max-1;double bands=Math.abs(Math.sin(d/(Math.max(1,28*scale))));if(bands<.09&&Math.abs(Math.sin(a*12))<.22)spike=Math.max(0,terrain-floor)+(int)(100*scale);if(u<.05)spike=0;}
+   // 0.8.1 #15: rune apocalypse - glowing rune veins in the obsidian field, no monoliths.
+   case RUNE_APOCALYPSE->{floor=(int)(center.y-280*scale*(1-u*.65));hi=max-1;}
   }
   floor=Math.max(min,Math.min(max-2,floor));spike=Math.max(0,Math.min(spike,max-1-floor));if(frost)floor=Math.max(min,Math.min(max-2,terrain));
   hi=Math.max(floor+spike,Math.max(floor,Math.min(max-1,hi)));hi=Math.min(max-1,hi);
@@ -57,7 +57,6 @@ public final class DestructionPlan {
  public BlockState state(Column c,int x,int y,int z,BlockState old){
   if(c.freeze){if(y>c.floor)return Blocks.BLUE_ICE.defaultBlockState();if(old.isAir())return old;if(!old.getFluidState().isEmpty())return Blocks.ICE.defaultBlockState();return(y==c.floor?Blocks.SNOW_BLOCK:Blocks.PACKED_ICE).defaultBlockState();}
   if(y>c.floor){
-   if(y<=c.floor+c.spike)return built(c,x,y,z);
    if(spell==Spell.ABYSSAL_DELUGE&&y<=0)return Blocks.WATER.defaultBlockState();
    return Blocks.AIR.defaultBlockState();
   }
@@ -79,24 +78,5 @@ public final class DestructionPlan {
    case RUNE_APOCALYPSE->h<.12?Blocks.GLOWSTONE:Blocks.OBSIDIAN;
    default->h<.2?Blocks.MAGMA_BLOCK:Blocks.POLISHED_BLACKSTONE;
   };return block.defaultBlockState();
- }
- private BlockState built(Column c,int x,int y,int z){
-  int peak=c.floor+c.spike;double h=noise(x,z+y);Block b=switch(spell){
-   case HEAVENS_LANCE->y==peak?Blocks.GLOWSTONE:(y%7==0?Blocks.CHISELED_QUARTZ_BLOCK:Blocks.QUARTZ_PILLAR);
-   case THOUSAND_BLADES->Blocks.AMETHYST_BLOCK;
-   case TEMPEST_WRATH->y==peak?Blocks.WAXED_COPPER_BLOCK:Blocks.POLISHED_BASALT;
-   case STARFALL->y==peak?Blocks.MAGMA_BLOCK:Blocks.BASALT;
-   case TECTONIC_RIFT->y==peak?Blocks.MAGMA_BLOCK:Blocks.ANDESITE;
-   case INFERNO_TIDE->Blocks.MAGMA_BLOCK;
-   case SOLAR_NOVA->y==peak?Blocks.YELLOW_STAINED_GLASS:Blocks.ORANGE_STAINED_GLASS;
-   case SINGULARITY->y==peak?Blocks.CRYING_OBSIDIAN:Blocks.OBSIDIAN;
-   case LAST_CATACLYSM->y%8==0?Blocks.AMETHYST_BLOCK:Blocks.POLISHED_BLACKSTONE;
-   case VERDANT_RUIN->y==peak?Blocks.MOSS_BLOCK:(y>peak-3?Blocks.DARK_OAK_WOOD:Blocks.STRIPPED_DARK_OAK_WOOD);
-   case OBSIDIAN_CATHEDRAL->y%11==0?Blocks.CRYING_OBSIDIAN:(y%13==0?Blocks.PURPUR_BLOCK:Blocks.OBSIDIAN);
-   case ABYSSAL_DELUGE->y==peak?Blocks.SEA_LANTERN:Blocks.PRISMARINE_BRICKS;
-   case WORLD_SUNDER->y==peak?Blocks.TUFF:Blocks.COBBLED_DEEPSLATE;
-   case RUNE_APOCALYPSE->y%9==0?Blocks.GLOWSTONE:(y==peak?Blocks.CHISELED_STONE_BRICKS:Blocks.OBSIDIAN);
-   default->Blocks.BASALT;
-  };return b.defaultBlockState();
  }
 }
