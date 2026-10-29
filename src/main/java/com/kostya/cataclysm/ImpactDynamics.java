@@ -20,27 +20,27 @@ public final class ImpactDynamics {
         return after-k*12.;
     }
     public static double shake(double after,double power,double distance){
-        if(after<0||after>=100)return 0;
+        if(after<0||after>=60)return 0;
         double attenuation=Math.min(1,160/Math.max(1,distance));
-        // 0.7.0 punch pass: hard spike that dies within half a second, one late echo, no slow sway tail.
-        double spike=Math.exp(-after/(3.5+power*2.));
-        double echo=.30*Math.exp(-Math.pow((after-14)/4.5,2));
-        return power*(spike+echo)*(1-after/100.)*attenuation;
+        // 0.8.1: one hard jolt that dies within a quarter second - the frame stays readable even at full power.
+        double spike=Math.exp(-after/(1.5+power*.9));
+        double echo=.10*Math.exp(-Math.pow((after-10)/3.,2));
+        return power*.45*(spike+echo)*(1-after/60.)*attenuation;
     }
     public static double kick(double after,double power){
         if(after<0||after>=6)return 0;
         return power*Math.exp(-after*.85);
     }
     public static double aberration(double after,double power){
-        if(after<0||after>=24)return 0;
-        // 0.7.7: a strike reads as a crisp few-frame fringe, not a multi-second wash.
-        return Math.min(1.6,(.45+.55*power)*Math.exp(-after/(3.5+power*1.))+.12*Math.exp(-Math.pow((after-8)/3.,2)));
+        if(after<0||after>=14)return 0;
+        // 0.8.1: a barely-there fringe - the split must never read as fog over the scene.
+        return Math.min(1.,(.20+.28*power)*Math.exp(-after/(2.5+power*.8))+.05*Math.exp(-Math.pow((after-6)/2.5,2)));
     }
     public static double glitch(double after,int tier){
-        if(after<0||after>=14)return 0;
-        // 0.7.7: the tear dies inside half a second - a few-frame accent per strike, not a sustained veil.
-        double escalate=tier>=16?0:.40+.60*(tier-1)/14.;
-        return escalate*Math.min(1,Math.exp(-after/2.2)+.16*Math.exp(-Math.pow((after-4)/1.8,2)))*Math.pow(1-after/14,2);
+        if(after<0||after>=8)return 0;
+        // 0.8.1: visibility first - the tear is a two-frame whisper at the strike, never a veil over the frame.
+        double escalate=tier>=16?0:.10+.14*(tier-1)/14.;
+        return escalate*Math.exp(-after/1.5)*Math.pow(1-after/8,2);
     }
     private ImpactDynamics(){}
 }
