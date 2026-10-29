@@ -148,7 +148,7 @@ void main(){
     world=mix(world,world+FxColor2.rgb*.18,FxParams.w);
     if(FxParams.z>.001){vec3 vision=astral(p,int(FxParams.x+.5),FxParams.y);vision=vec3(1.)-exp(-vision*1.2);world=mix(world,vision,FxParams.z);}
     // 0.7.5: TSS-style impact frames - one stylized frame per tick for six ticks after each strike (ink/inverted/accent).
-    float ifStep=floor(clamp(FxImpact.x,0.,7.));
+    float ifStep=FxImpact.x>=0.?floor(min(FxImpact.x,7.)):-1.; // 0.7.6: negative clock = no strike yet, no impact frame
     int ifMode=ifStep==0.?3:ifStep==1.?1:ifStep==2.?3:ifStep==3.?1:ifStep==4.?0:(ifStep==5.?3:-1);
     if(ifMode>=0&&FxColor3.a>0.){
         float ifLum=dot(world,vec3(.299,.587,.114));vec3 ifFrame;

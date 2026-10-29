@@ -483,7 +483,7 @@ void main(){
  // 0.7.1: reference look - the frame desaturates while the RGB split is at its peak.
  scene=mix(scene,vec3(dot(scene,vec3(.299,.587,.114))),clamp(radialCA*5.,0.,.4));
  // 0.7.5: TSS-style impact frames - one stylized frame per tick for six ticks after each strike (ink/inverted/accent).
- float ifStep=floor(clamp(FxImpact.x,0.,7.));
+ float ifStep=FxImpact.x>=0.?floor(min(FxImpact.x,7.)):-1.; // 0.7.6: negative clock = no strike yet, no impact frame
  int ifMode=ifStep==0.?3:ifStep==1.?1:ifStep==2.?3:ifStep==3.?1:ifStep==4.?0:(ifStep==5.?3:-1);
  if(ifMode>=0&&FxParams.w>0.){
   float ifLum=dot(scene,vec3(.299,.587,.114));vec3 ifFrame;
