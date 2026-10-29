@@ -7,6 +7,7 @@ uniform vec4 FxColor2; // signature color, bloom amount
 uniform float FxTime;
 uniform vec2 FxScreen;
 uniform vec4 FxImpact; // 0.7.0: ticks after impact, bounded power, glitch envelope, shake envelope
+uniform vec4 FxColor3; // 0.7.2: secondary spell color for the opposite fringe band
 in vec2 texCoord;
 in vec4 vertexColor;
 out vec4 fragColor;
@@ -124,6 +125,8 @@ void main(){
     world.r=texture(Sampler0,clamp(sampleUV+caDir*caEnv,vec2(.001),vec2(.999))).r;
     world.g=texture(Sampler0,sampleUV).g;
     world.b=texture(Sampler0,clamp(sampleUV-caDir*caEnv,vec2(.001),vec2(.999))).b;
+    // 0.7.2: painted signature fringes - saturated per-spell bands like the reference frames, not content-derived tints.
+    world+=FxColor2.rgb*smoothstep(.08,.75,abs(q.x))*caEnv*4.5+FxColor3.rgb*smoothstep(.08,.75,abs(q.y))*caEnv*4.5;
     vec2 pixel=1./FxScreen;vec3 bloom=vec3(0.);
     for(int i=0;i<8;i++){
         float a=float(i)*PI/4.;vec2 off=vec2(cos(a),sin(a))*pixel;

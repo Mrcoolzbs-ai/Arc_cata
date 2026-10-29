@@ -4,7 +4,9 @@ package com.kostya.cataclysm;
 public final class ImpactDynamics {
     public static double power(int tier,double radius,double scale){
         if(!Double.isFinite(scale))scale=1;
-        return Math.clamp((.60+.20*Math.clamp(tier,1,16)+.003*Math.max(0,radius))*Math.sqrt(Math.clamp(scale,.25,4)),.35,3.8);
+        double p=(.60+.26*Math.min(tier,15)+.003*Math.max(0,radius))*Math.sqrt(Math.clamp(scale,.25,4));
+        // 0.7.2: tier escalation for spells 1-15; 16 is pure cinema and gets a gentle factor instead.
+        return Math.clamp(tier>=16?p*.45:p,.35,4.2);
     }
     public static double shake(double after,double power,double distance){
         if(after<0||after>=100)return 0;
@@ -22,10 +24,11 @@ public final class ImpactDynamics {
         if(after<0||after>=80)return 0;
         return Math.min(1.6,(.45+.55*power)*Math.exp(-after/(4.5+power*1.5))+.22*Math.exp(-Math.pow((after-16)/6.,2)));
     }
-    public static double glitch(double after){
+    public static double glitch(double after,int tier){
         if(after<0||after>=32)return 0;
-        // 0.7.1: longer, stronger fracture window so the reference-tuned RGB split stays alive ~1.5s.
-        return Math.min(1,Math.exp(-after/7.5)+.42*Math.exp(-Math.pow((after-8)/3.,2)))*Math.pow(1-after/32,2);
+        // 0.7.2: spells escalate 1->15 (55%..100% intensity); spell 16 is pure cinema and gets no chromatic tear.
+        double escalate=tier>=16?0:.55+.45*(tier-1)/14.;
+        return escalate*Math.min(1,Math.exp(-after/7.5)+.42*Math.exp(-Math.pow((after-8)/3.,2)))*Math.pow(1-after/32,2);
     }
     private ImpactDynamics(){}
 }

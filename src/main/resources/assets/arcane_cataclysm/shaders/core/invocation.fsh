@@ -451,11 +451,13 @@ void main(){
  world.r=texture(Sampler0,clamp(warped+vec2(split,0)+radialDir,vec2(.002),vec2(.998))).r;
  world.g=texture(Sampler0,warped).g;
  world.b=texture(Sampler0,clamp(warped-vec2(split,0)-radialDir,vec2(.002),vec2(.998))).b;
+ // 0.7.2: painted signature fringes - saturated per-spell bands like the reference frames.
+ world+=primary*smoothstep(.1,1.,abs(sampleUV.x-.5)*2.)*radialCA*3.5+accent*smoothstep(.1,1.,abs(sampleUV.y-.5)*2.)*radialCA*3.5;
  float fineRow=floor(sampleUV.y*FxScreen.y/3.);
  float shards=step(.989,hash1(floor(sampleUV.x*90.)+fineRow*113.+clock*271.));
- vec3 prism=mix(vec3(.10,1.,.90),vec3(.95,.10,1.),step(.5,hash1(row+clock)));
+ vec3 prism=mix(primary,accent,step(.5,hash1(row+clock)));
  prism=mix(prism,FxColor2.rgb,.40);
- world+=prism*(torn*.22+shards*.60)*fracture*force;
+ world+=prism*(torn*.30+shards*.85)*fracture*force;
  float scan=cos(sampleUV.y*FxScreen.y*1.57+clock)*.035*fracture;
  world*=1.+scan;
  // A single exposure dip replaces persistent rapid full-screen strobing.
@@ -475,7 +477,8 @@ void main(){
  if(speed>.01){
   float ang=atan(uv.y,uv.x),rr=length(uv);
   float streak=pow(max(0.,sin(ang*44.+hash1(floor(ang*7.63))*9.)),24.);
-  scene+=FxColor2.rgb*streak*smoothstep(.28,.6,rr)*(1.-smoothstep(1.1,1.6,rr))*speed*.55;
+  vec3 streakCol=mix(FxColor2.rgb,accent,step(.5,hash1(floor(ang*7.63)+clock)));
+  scene+=streakCol*streak*smoothstep(.28,.6,rr)*(1.-smoothstep(1.1,1.6,rr))*speed*.55;
  }
  // 0.7.1: reference look - the frame desaturates while the RGB split is at its peak.
  scene=mix(scene,vec3(dot(scene,vec3(.299,.587,.114))),clamp(radialCA*5.,0.,.4));
