@@ -38,6 +38,8 @@ public final class DestructionEngine {
         private final List<Loading> loading=new ArrayList<>();private Prepared current;private int cursor,pendingLights;
         private Capture capture;
         private long lastNotice=-1000;private long lastStrike=-1000;private int strikeIndex;
+        // 0.7.9: tesseract waves - tiers 10-15 commit prepared chunks in batches; one strike per flushed batch.
+        private int waveBatch,waveOpen,waveInFlight;
         private Handle(ServerLevel level,DestructionPlan plan,UUID owner){
             this.level=level;this.plan=plan;this.id=plan.seed;this.owner=owner;
             var list=new ArrayList<ChunkPos>();
@@ -74,6 +76,12 @@ public final class DestructionEngine {
         if(h==null||h.done)return;h.released=true;
         // Explicit opt-in/default for 0.3 requested semantics: no tick budget in this synchronous burst.
         // Never join unfinished geometry or synchronously generate chunks here.
+        // 0.7.9: heavy spells (tier 10-15) skip the burst - they destroy in strike-synced waves instead.
+        if(waveMode(h)){
+            int waves=Math.max(1,ImpactDynamics.hits(h.plan.spell.tier()));
+            h.waveBatch=Math.max(1,(h.total+waves-1)/waves);
+            LogUtils.getLogger().info("[Cataclysm] WAVE_MODE {} chunks={} waves>={} batch={}",h.plan.spell.id,h.total,waves,h.waveBatch);
+            return;}
         if(!CataclysmConfig.INSTANT_IMPACT.get()||(h.plan.spell==Spell.END_OF_ALL||h.plan.spell==Spell.VERDANT_RUIN))return;
         for(var it=h.ready.iterator();it.hasNext();){Prepared p=it.next();
             if(!p.geometry.isDone()||p.geometry.isCompletedExceptionally())continue;
@@ -98,7 +106,7 @@ public final class DestructionEngine {
             int columns=CataclysmConfig.COLUMNS_PER_TICK.get(),finishes=0,rotations=0;
             while(!JOBS.isEmpty()&&columns>0&&finishes<2&&System.nanoTime()<deadline){
                 Handle h=JOBS.peek();
-                if(!h.released||!selectCurrent(h)){JOBS.addLast(JOBS.removeFirst());if(++rotations>=JOBS.size())break;continue;}
+                if(waveHeld(h)||!h.released||!selectCurrent(h)){JOBS.addLast(JOBS.removeFirst());if(++rotations>=JOBS.size())break;continue;}
                 editColumn(h,h.current,h.cursor++);columns--;rotations=0;
                 if(h.cursor==256){finish(h,h.current);h.current=null;h.cursor=0;finishes++;JOBS.addLast(JOBS.removeFirst());}
             }
@@ -220,6 +228,7 @@ public final class DestructionEngine {
             chunk.setUnsaved(true);cache.getLightEngine().tryScheduleUpdate();h.pendingLights++;
             LIGHTING.add(new Pending(h,p,cache.getLightEngine().waitForPendingTasks(chunk.getPos().x,chunk.getPos().z),h.level.getGameTime()));
             completedChunks++;h.committed++;
+            if(h.waveBatch>0){h.waveOpen++;h.waveInFlight++;} // 0.7.9: tesseract wave accounting
         }else unpin(h,chunk.getPos());
     }
     /** Sparse real fire, not decorative particles. Vanilla may spread it according to doFireTick. */
@@ -244,8 +253,20 @@ public final class DestructionEngine {
             if(!players.isEmpty()){var packet=new ClientboundLevelChunkWithLightPacket(chunk,h.level.getChunkSource().getLightEngine(),null,null);for(var player:players)player.connection.send(packet);}
             // 0.7.4: terrain just became visibly destroyed for these players - fire the matching barrage strike.
             if(!players.isEmpty())strike(h,players);
-            h.pendingLights--;unpin(h,chunk.getPos());it.remove();sent++;
+            h.pendingLights--;if(h.waveBatch>0)h.waveInFlight--;unpin(h,chunk.getPos());it.remove();sent++;
         }
+    }
+    /** 0.7.9: tesseract mode - tiers 10-15 destroy in strike-synced waves of prepared chunks (Verdant Ruin keeps its own pacing). */
+    private static boolean waveMode(Handle h){
+        return h.plan.spell.tier()>=10&&h.plan.spell.tier()<16&&h.plan.spell!=Spell.VERDANT_RUIN;
+    }
+    /** 0.7.9: hold the next wave until the current batch has fully flushed - each flushed batch IS one strike. */
+    private static boolean waveHeld(Handle h){
+        if(h.waveBatch<=0)return false;
+        if(h.waveOpen>=h.waveBatch){
+            if(h.waveInFlight<=0)h.waveOpen=0; // batch flushed - the next wave may commit
+            return true;}
+        return false;
     }
     /** 0.7.4: reality-synced barrage - one broadcast per flush wave, throttled; driven by actual terrain sync, not a timer. */
     private static void strike(Handle h,List<ServerPlayer> players){
