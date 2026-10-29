@@ -5,11 +5,13 @@ import com.kostya.cataclysm.network.SpellNetwork;
 import net.minecraft.client.*;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.resources.sounds.*;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.*;
 import net.minecraft.world.phys.*;
 import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -30,16 +32,19 @@ public final class ClientEffects {
         public SoundInstance chargeSound,scoreSound;public boolean scoreStarted;public int age;public boolean skipped;int soundDelay=-1;
         // 0.7.4: reality sync - filled by SpellNetwork.Strike when terrain actually flushes to this client.
         public int realStrikes;public double lastStrikeAge=-1;public float strikePower=1;
+        // 0.7.8: strikes wait for the terrain change this client has actually applied.
+        BlockPos[] probePos;BlockState[] probes;final List<PendingStrike> pendingStrikes=new ArrayList<>();
         Fx(SpellNetwork.Fx packet){this.packet=packet;spell=Spell.byIndex(packet.spell());strikes=SpellPatterns.strikes(packet.target(),packet.seed(),spell.radius*packet.scale()*.86,spell==Spell.TEMPEST_WRATH?40:72);}
         public float age(float partial){return age+partial;}
         public double radius(){return spell.radius*packet.scale();}
     }
     public record View(Vec3 pos,float yaw,float pitch,float roll){}
+    private record PendingStrike(SpellNetwork.Strike packet,int age){}
     private static Minecraft mc(){return Minecraft.getInstance();}
     public static void receive(SpellNetwork.Fx packet){
         if(mc().level==null||packet.spell()<0||packet.spell()>=Spell.values().length||!Float.isFinite(packet.scale())||packet.scale()<=0||packet.scale()>1.5)return;
         if(ACTIVE.size()>=12){var old=ACTIVE.removeFirst();SpellFilm.stop(old);if(old.chargeSound!=null)mc().getSoundManager().stop(old.chargeSound);}
-        var fx=new Fx(packet);ACTIVE.add(fx);
+        var fx=new Fx(packet);ACTIVE.add(fx);sampleProbes(fx);
         if(mc().player!=null&&packet.caster()==mc().player.getId())mc().getMusicManager().stopPlaying();
         if(SpellFilm.eligible(fx)){SpellFilm.audio(fx);return;}
         fx.chargeSound=new SimpleSoundInstance(Cataclysm.id(fx.spell.id+"_charge"),SoundSource.PLAYERS,.55f,1f,RandomSource.create(),false,0,SoundInstance.Attenuation.NONE,0,0,0,true);
@@ -56,7 +61,7 @@ public final class ClientEffects {
         if(cinematic()!=null){if(savedClouds==null)savedClouds=m.options.cloudStatus().get();m.options.cloudStatus().set(CloudStatus.OFF);}else if(savedClouds!=null){m.options.cloudStatus().set(savedClouds);savedClouds=null;}
         if(m.isPaused())return;
         for(var it=ACTIVE.iterator();it.hasNext();){
-            Fx f=it.next();f.age++;SpellFilm.audio(f);
+            Fx f=it.next();f.age++;SpellFilm.audio(f);confirmStrikes(f);
             if(f.age==f.spell.impact){if(f.chargeSound!=null)m.getSoundManager().stop(f.chargeSound);f.soundDelay=(int)Math.min(40,m.player.position().distanceTo(f.packet.target())/17);}
             if(f.soundDelay>=0 && f.soundDelay--==0&&f.scoreSound==null){sound(f.spell.id+"_impact",.9f,1f);}
             if(f.age>f.spell.duration){SpellFilm.stop(f);if(f.chargeSound!=null)m.getSoundManager().stop(f.chargeSound);it.remove();}
@@ -91,13 +96,32 @@ public final class ClientEffects {
         var n=e.getName();
         if(n.equals(net.neoforged.neoforge.client.gui.VanillaGuiLayers.CROSSHAIR)||n.equals(net.neoforged.neoforge.client.gui.VanillaGuiLayers.HOTBAR)||n.equals(net.neoforged.neoforge.client.gui.VanillaGuiLayers.SELECTED_ITEM_NAME)||n.equals(net.neoforged.neoforge.client.gui.VanillaGuiLayers.EXPERIENCE_BAR)||n.equals(net.neoforged.neoforge.client.gui.VanillaGuiLayers.EXPERIENCE_LEVEL))e.setCanceled(true);
     }
-    /** 0.7.4: reality sync - a Strike packet means terrain just became visibly destroyed on this client. */
+    /** 0.7.8: a Strike packet is queued, not applied - the punch lands when this client has applied the terrain change. */
     public static void strike(SpellNetwork.Strike p){
         if(mc().level==null||p.spell()<0||p.spell()>=Spell.values().length)return;
         for(Fx f:ACTIVE)if(f.spell.ordinal()==p.spell()&&f.packet.target().distanceToSqr(p.target())<4.){
-            f.lastStrikeAge=f.age;f.realStrikes++;f.strikePower=Math.max(.4f,Math.min(1.25f,p.intensity()));
+            f.pendingStrikes.add(new PendingStrike(p,f.age));return;}
+    }
+    /** 0.7.8: snapshot the impact ring so strikes can wait for the change this player actually sees. */
+    private static void sampleProbes(Fx f){
+        var level=mc().level;var t=f.packet.target();double r=Math.max(2,f.radius()*.65);
+        f.probePos=new BlockPos[9];f.probes=new BlockState[9];
+        for(int i=0;i<9;i++){double a=i*Math.PI/4.,x=t.x+Math.cos(a)*r,z=t.z+Math.sin(a)*r;
+            int y=level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING,(int)Math.floor(x),(int)Math.floor(z))-1;
+            f.probePos[i]=new BlockPos((int)Math.floor(x),y,(int)Math.floor(z));f.probes[i]=level.getBlockState(f.probePos[i]);}
+    }
+    /** 0.7.8: fire when the probe ring actually changed here; the 2 s timeout keeps barrage pacing if this client never sees the terrain. */
+    private static void confirmStrikes(Fx f){
+        if(f.pendingStrikes.isEmpty()||mc().level==null)return;
+        PendingStrike newest=f.pendingStrikes.get(f.pendingStrikes.size()-1);
+        if(f.probes==null||f.age-f.pendingStrikes.get(0).age()>40||changedProbes(f)>=3){
+            f.pendingStrikes.clear();
+            f.lastStrikeAge=f.age;f.realStrikes++;f.strikePower=Math.max(.4f,Math.min(1.25f,newest.packet().intensity()));
             if(f.age>=f.spell.impact)sound(f.spell.id+"_impact",.30f*f.strikePower,.9f+RandomSource.create().nextFloat()*.2f);
-            return;}
+        }
+    }
+    private static int changedProbes(Fx f){
+        int n=0;for(int i=0;i<9;i++)if(mc().level.getBlockState(f.probePos[i])!=f.probes[i])n++;return n;
     }
     /** 0.7.4: real casts follow server strike events; preview and visual-only casts keep the synthetic barrage. */
     public static double sinceStrike(Fx f,double age){
