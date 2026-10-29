@@ -117,8 +117,8 @@ void main(){
     // 0.7.3: every strike of the barrage re-fires the shockfront - two hard fronts per hit.
     float shock=sin(length(q)*44.-afterHit*38.)*exp(-max(0.,afterHit)*3.2)*.016*hit;
     shock+=sin(length(q)*30.-(afterHit-6.)*26.)*exp(-abs(afterHit-6.)*.8)*.010*step(6.,afterHit);
-    // 0.7.7: the split is a brief hit accent - the glitch envelope now dies inside half a second.
-    float caEnv=max(FxImpact.w*.024,FxImpact.z*.09)+.0035*smoothstep(.82,1.,min(1.,FxParams.y))*(1.-hit);
+    // 0.8.1: visibility first - the split is halved again; it must never veil the frame.
+    float caEnv=max(FxImpact.w*.012,FxImpact.z*.045)+.0035*smoothstep(.82,1.,min(1.,FxParams.y))*(1.-hit);
     vec2 caDir=q*vec2(FxScreen.x/FxScreen.y,1.);
     vec2 sampleUV=clamp(uv+normalize(q+vec2(.0001))*shock,vec2(.001),vec2(.999));
     vec3 world;
@@ -126,7 +126,7 @@ void main(){
     world.g=texture(Sampler0,sampleUV).g;
     world.b=texture(Sampler0,clamp(sampleUV-caDir*caEnv,vec2(.001),vec2(.999))).b;
     // 0.7.2: painted signature fringes - saturated per-spell bands like the reference frames, not content-derived tints.
-    world+=FxColor2.rgb*smoothstep(.34,.95,abs(q.x))*caEnv*2.2+FxColor3.rgb*smoothstep(.34,.95,abs(q.y))*caEnv*2.2;
+    world+=FxColor2.rgb*smoothstep(.34,.95,abs(q.x))*caEnv*.7+FxColor3.rgb*smoothstep(.34,.95,abs(q.y))*caEnv*.7;
     vec2 pixel=1./FxScreen;vec3 bloom=vec3(0.);
     for(int i=0;i<8;i++){
         float a=float(i)*PI/4.;vec2 off=vec2(cos(a),sin(a))*pixel;
@@ -143,7 +143,7 @@ void main(){
             pull+=texture(Sampler0,clamp(sampleUV-q*fstep*vec2(FxScreen.x/FxScreen.y,1.)*.14,vec2(.001),vec2(.999))).rgb;}
         world=mix(world,pull*.33,clamp(flash*.9,0.,.75));}
     // 0.7.1: reference look - the frame desaturates toward the edges while the RGB split is at its peak.
-    world=mix(world,vec3(dot(world,vec3(.299,.587,.114))),clamp(caEnv*1.3*smoothstep(.3,.95,length(q)),0.,.20));
+    world=mix(world,vec3(dot(world,vec3(.299,.587,.114))),clamp(caEnv*.8*smoothstep(.3,.95,length(q)),0.,.10));
     world=world/(vec3(1.)+world*.22);
     world=mix(world,world+FxColor2.rgb*.18,FxParams.w);
     if(FxParams.z>.001){vec3 vision=astral(p,int(FxParams.x+.5),FxParams.y);vision=vec3(1.)-exp(-vision*1.2);world=mix(world,vision,FxParams.z);}
