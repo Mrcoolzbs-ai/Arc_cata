@@ -33,7 +33,9 @@ for id in range(9,15):
  assert f'#define FILM_ID {id}' in (R/'shaders/core'/f'{name}.fsh').read_text()
  assert json.loads((R/'shaders/core'/f'{name}.json').read_text())['samplers']==[{'name':'Landscape'}]
 plan=(J/'world/DestructionPlan.java').read_text();assert 'spell==Spell.ABYSSAL_DELUGE&&y<=0' in plan
-life=plan[plan.index('case VERDANT_RUIN->{'):plan.index('case OBSIDIAN_CATHEDRAL->{')];assert 'hi=terrain+(int)(19*scale)' in life and 'spike=(int)(18*scale)' in life  # 0.8.0: dead trunks stand in the withered crater
+grave=plan[plan.index('case GLACIAL_RAGNAROK->{'):plan.index('case TEMPEST_WRATH->{')];assert 'spike=' in grave  # 0.8.1: the frost grave alone keeps its ice monoliths
+life=plan[plan.index('case VERDANT_RUIN->{'):plan.index('case OBSIDIAN_CATHEDRAL->{')];assert 'spike=' not in life and 'hi=terrain;' in life  # 0.8.1: no columns - the withered crater stays clear
+assert 'private BlockState built' not in plan  # 0.8.1: nothing but the frost grave builds anything after a cast
 engine=(J/'world/DestructionEngine.java').read_text();assert 'h.plan.spell==Spell.VERDANT_RUIN))return;' in engine
 assert 'cap.cursor<256&&System.nanoTime()<deadline' in engine
 assert 'unpin(h,h.capture.chunk.getPos());h.capture=null' in engine
