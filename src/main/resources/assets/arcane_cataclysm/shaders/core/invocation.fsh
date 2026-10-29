@@ -439,12 +439,12 @@ void main(){
  // Short, signature-colored impact fractures; no effect before impact or in reduced-flash mode.
  float fracture=FxImpact.z,force=clamp(FxImpact.y/2.1,.35,1.8);
  float clock=floor(max(0.,FxImpact.x)*1.6),row=floor(sampleUV.y*43.);
- float torn=step(.77,hash1(row*17.+clock*31.));
- float jitter=(hash1(row+clock*71.)-.5)*torn*.12*fracture*force;
+ float torn=step(.86,hash1(row*17.+clock*31.));
+ float jitter=(hash1(row+clock*71.)-.5)*torn*.08*fracture*force;
  vec2 warped=clamp(sampleUV+vec2(jitter,0),vec2(.002),vec2(.998));
  float split=(.006+.026*torn)*fracture*force;
- // 0.7.3: full anime madness - the split rides the whole barrage at ~10% frame width.
- float radialCA=(.030*FxImpact.w+.16*exp(-max(0.,FxImpact.x)*.30)*step(0.,FxImpact.x))*force;
+ // 0.7.7: the split is a brief accent - it dies inside half a second after each strike.
+ float radialCA=(.024*FxImpact.w+.09*exp(-max(0.,FxImpact.x)*.55)*step(0.,FxImpact.x))*force;
  radialCA+=.004*ease(.88,1.,min(1.,FxParams.y))*step(FxParams.y,1.);
  vec2 radialDir=(sampleUV-.5)*radialCA;
  vec3 world;
@@ -452,12 +452,12 @@ void main(){
  world.g=texture(Sampler0,warped).g;
  world.b=texture(Sampler0,clamp(warped-vec2(split,0)-radialDir,vec2(.002),vec2(.998))).b;
  // 0.7.2: painted signature fringes - saturated per-spell bands like the reference frames.
- world+=primary*smoothstep(.1,1.,abs(sampleUV.x-.5)*2.)*radialCA*6.+accent*smoothstep(.1,1.,abs(sampleUV.y-.5)*2.)*radialCA*6.;
+ world+=primary*smoothstep(.45,1.,abs(sampleUV.x-.5)*2.)*radialCA*2.2+accent*smoothstep(.45,1.,abs(sampleUV.y-.5)*2.)*radialCA*2.2;
  float fineRow=floor(sampleUV.y*FxScreen.y/3.);
  float shards=step(.989,hash1(floor(sampleUV.x*90.)+fineRow*113.+clock*271.));
  vec3 prism=mix(primary,accent,step(.5,hash1(row+clock)));
  prism=mix(prism,FxColor2.rgb,.40);
- world+=prism*(torn*.40+shards*1.1)*fracture*force;
+ world+=prism*(torn*.30+shards*.60)*fracture*force;
  float scan=cos(sampleUV.y*FxScreen.y*1.57+clock)*.035*fracture;
  world*=1.+scan;
  // A single exposure dip replaces persistent rapid full-screen strobing.
@@ -473,15 +473,15 @@ void main(){
  vec3 scene=world;
  if(blend>.001)scene=mix(world,theatre(uv,id),blend);
  // 0.7.0: radial speed streaks on the first half-second after the strike.
- float speed=exp(-max(0.,FxImpact.x)*.14)*step(0.,FxImpact.x)*force;
+ float speed=exp(-max(0.,FxImpact.x)*.38)*step(0.,FxImpact.x)*force;
  if(speed>.01){
   float ang=atan(uv.y,uv.x),rr=length(uv);
   float streak=pow(max(0.,sin(ang*44.+hash1(floor(ang*7.63))*9.)),24.);
   vec3 streakCol=mix(FxColor2.rgb,accent,step(.5,hash1(floor(ang*7.63)+clock)));
-  scene+=streakCol*streak*smoothstep(.28,.6,rr)*(1.-smoothstep(1.1,1.6,rr))*speed*.55;
+  scene+=streakCol*streak*smoothstep(.28,.6,rr)*(1.-smoothstep(1.1,1.6,rr))*speed*.45;
  }
  // 0.7.1: reference look - the frame desaturates while the RGB split is at its peak.
- scene=mix(scene,vec3(dot(scene,vec3(.299,.587,.114))),clamp(radialCA*5.,0.,.4));
+ scene=mix(scene,vec3(dot(scene,vec3(.299,.587,.114))),clamp(radialCA*3.,0.,.20));
  // 0.7.5: TSS-style impact frames - one stylized frame per tick for six ticks after each strike (ink/inverted/accent).
  float ifStep=FxImpact.x>=0.?floor(min(FxImpact.x,7.)):-1.; // 0.7.6: negative clock = no strike yet, no impact frame
  int ifMode=ifStep==0.?3:ifStep==1.?1:ifStep==2.?3:ifStep==3.?1:ifStep==4.?0:(ifStep==5.?3:-1);
@@ -493,8 +493,8 @@ void main(){
    if(ifMode==3)ifFrame=mix(ifFrame,accent,step(.5,ifLum)*.55);}
   scene=mix(scene,ifFrame,.92);}
  // 0.7.5: the hit-stop beat and the TSS zoom blur, straight from the reference anatomy.
- scene=mix(scene,vec3(dot(scene,vec3(.299,.587,.114))),.30*step(0.,FxImpact.x)*(1.-smoothstep(6.,16.,FxImpact.x)));
- float zoomK=.5*smoothstep(0.,.6,FxImpact.x)*(1.-smoothstep(6.,24.,FxImpact.x));
+ scene=mix(scene,vec3(dot(scene,vec3(.299,.587,.114))),.24*step(0.,FxImpact.x)*(1.-smoothstep(6.,12.,FxImpact.x)));
+ float zoomK=.38*smoothstep(0.,.6,FxImpact.x)*(1.-smoothstep(6.,14.,FxImpact.x));
  if(zoomK>.02){vec3 zoom=scene;
   for(int k=1;k<=5;k++){float zs=1.-float(k)*.012*zoomK;
    zoom+=texture(Sampler0,clamp((uv-.5)*zs+.5,vec2(.002),vec2(.998))).rgb;}

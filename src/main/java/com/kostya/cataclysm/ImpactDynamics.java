@@ -32,14 +32,15 @@ public final class ImpactDynamics {
         return power*Math.exp(-after*.85);
     }
     public static double aberration(double after,double power){
-        if(after<0||after>=80)return 0;
-        return Math.min(1.6,(.45+.55*power)*Math.exp(-after/(4.5+power*1.5))+.22*Math.exp(-Math.pow((after-16)/6.,2)));
+        if(after<0||after>=24)return 0;
+        // 0.7.7: a strike reads as a crisp few-frame fringe, not a multi-second wash.
+        return Math.min(1.6,(.45+.55*power)*Math.exp(-after/(3.5+power*1.))+.12*Math.exp(-Math.pow((after-8)/3.,2)));
     }
     public static double glitch(double after,int tier){
-        if(after<0||after>=32)return 0;
-        // 0.7.3: every tier now reads as full anime; the ramp 75%..100% only shapes the sustained tear length.
-        double escalate=tier>=16?0:.75+.25*(tier-1)/14.;
-        return escalate*Math.min(1,Math.exp(-after/7.5)+.42*Math.exp(-Math.pow((after-8)/3.,2)))*Math.pow(1-after/32,2);
+        if(after<0||after>=14)return 0;
+        // 0.7.7: the tear dies inside half a second - a few-frame accent per strike, not a sustained veil.
+        double escalate=tier>=16?0:.40+.60*(tier-1)/14.;
+        return escalate*Math.min(1,Math.exp(-after/2.2)+.16*Math.exp(-Math.pow((after-4)/1.8,2)))*Math.pow(1-after/14,2);
     }
     private ImpactDynamics(){}
 }
