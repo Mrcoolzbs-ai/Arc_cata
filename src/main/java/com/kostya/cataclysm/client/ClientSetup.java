@@ -15,7 +15,7 @@ import java.io.IOException;
 public final class ClientSetup {
     public static final KeyMapping CAMERA=new KeyMapping("key.arcane_cataclysm.camera",GLFW.GLFW_KEY_C,"key.categories.arcane_cataclysm");
     public static final KeyMapping SKIP=new KeyMapping("key.arcane_cataclysm.skip",GLFW.GLFW_KEY_V,"key.categories.arcane_cataclysm");
-    @SubscribeEvent public static void setup(FMLClientSetupEvent e){e.enqueueWork(()->{SpellNetwork.clientReceiver=ClientEffects::receive;SpellNetwork.progressReceiver=ClientEffects::progress;SpellNetwork.endReceiver=EndCinematic::receive;});}
+    @SubscribeEvent public static void setup(FMLClientSetupEvent e){e.enqueueWork(()->{SpellNetwork.clientReceiver=ClientEffects::receive;SpellNetwork.progressReceiver=ClientEffects::progress;SpellNetwork.strikeReceiver=ClientEffects::strike;SpellNetwork.endReceiver=EndCinematic::receive;});}
     @SubscribeEvent public static void keys(RegisterKeyMappingsEvent e){e.register(CAMERA);e.register(SKIP);}
     @SubscribeEvent public static void shaders(RegisterShadersEvent e)throws IOException{
         e.registerShader(new ShaderInstance(e.getResourceProvider(),Cataclysm.id("end_scene"),DefaultVertexFormat.POSITION_TEX_COLOR),s->EndCinematic.shader=s);

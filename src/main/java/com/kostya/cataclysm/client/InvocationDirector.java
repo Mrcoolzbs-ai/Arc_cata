@@ -40,10 +40,10 @@ public final class InvocationDirector {
         float yaw=(float)(Math.atan2(dir.z,dir.x)*180/Math.PI-90),pitch=(float)(-Math.atan2(dir.y,dir.horizontalDistance())*180/Math.PI);
         yaw=camera.getYRot()+Mth.wrapDegrees(yaw-camera.getYRot())*(float)blend;
         pitch=Mth.lerp((float)blend,camera.getXRot(),pitch);
-        // 0.7.3: a hard roll flinch that re-fires on every strike of the barrage.
-        double afterHit=ImpactDynamics.sinceHit(after,f.spell.tier());
+        // 0.7.4: a hard roll flinch that re-fires on every REAL strike of the barrage.
+        double afterHit=ClientEffects.sinceStrike(f,age);
         double flinch=afterHit>=0&&afterHit<10?Math.sin(afterHit*.9)*Math.exp(-afterHit*.5):0;
-        return new ClientEffects.View(pos,yaw,pitch,(float)(flinch*.9));
+        return new ClientEffects.View(pos,yaw,pitch,(float)(flinch*.9*f.strikePower));
     }
     public static void title(GuiGraphics g,ClientEffects.Fx f,float age,int bar){
         InvocationHud.draw(g,f,age,bar);

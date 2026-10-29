@@ -28,6 +28,8 @@ public final class ClientEffects {
     public static final class Fx {
         public final Spell spell;public final SpellNetwork.Fx packet;public final List<Vec3> strikes;
         public SoundInstance chargeSound,scoreSound;public boolean scoreStarted;public int age;public boolean skipped;int soundDelay=-1;
+        // 0.7.4: reality sync - filled by SpellNetwork.Strike when terrain actually flushes to this client.
+        public int realStrikes;public double lastStrikeAge=-1;public float strikePower=1;
         Fx(SpellNetwork.Fx packet){this.packet=packet;spell=Spell.byIndex(packet.spell());strikes=SpellPatterns.strikes(packet.target(),packet.seed(),spell.radius*packet.scale()*.86,spell==Spell.TEMPEST_WRATH?40:72);}
         public float age(float partial){return age+partial;}
         public double radius(){return spell.radius*packet.scale();}
@@ -89,18 +91,30 @@ public final class ClientEffects {
         var n=e.getName();
         if(n.equals(net.neoforged.neoforge.client.gui.VanillaGuiLayers.CROSSHAIR)||n.equals(net.neoforged.neoforge.client.gui.VanillaGuiLayers.HOTBAR)||n.equals(net.neoforged.neoforge.client.gui.VanillaGuiLayers.SELECTED_ITEM_NAME)||n.equals(net.neoforged.neoforge.client.gui.VanillaGuiLayers.EXPERIENCE_BAR)||n.equals(net.neoforged.neoforge.client.gui.VanillaGuiLayers.EXPERIENCE_LEVEL))e.setCanceled(true);
     }
+    /** 0.7.4: reality sync - a Strike packet means terrain just became visibly destroyed on this client. */
+    public static void strike(SpellNetwork.Strike p){
+        if(mc().level==null||p.spell()<0||p.spell()>=Spell.values().length)return;
+        for(Fx f:ACTIVE)if(f.spell.ordinal()==p.spell()&&f.packet.target().distanceToSqr(p.target())<4.){
+            f.lastStrikeAge=f.age;f.realStrikes++;f.strikePower=Math.max(.4f,Math.min(1.25f,p.intensity()));
+            if(f.age>=f.spell.impact)sound(f.spell.id+"_impact",.30f*f.strikePower,.9f+RandomSource.create().nextFloat()*.2f);
+            return;}
+    }
+    /** 0.7.4: real casts follow server strike events; preview and visual-only casts keep the synthetic barrage. */
+    public static double sinceStrike(Fx f,double age){
+        return f.realStrikes>0?age-f.lastStrikeAge:ImpactDynamics.sinceHit(age-f.spell.impact,f.spell.tier());
+    }
     public static double shake(float partial){
         if(!ClientOptions.SHAKE.get()||mc().player==null)return 0;
-        double amount=0;for(Fx f:ACTIVE){double age=ImpactDynamics.sinceHit(f.age(partial)-f.spell.impact,f.spell.tier());if(age<0||age>90)continue;
-            double distance=mc().player.position().distanceTo(f.packet.target());amount+=ImpactDynamics.shake(age,ImpactDynamics.power(f.spell.tier(),f.spell.radius,f.packet.scale()),distance);
+        double amount=0;for(Fx f:ACTIVE){double age=sinceStrike(f,f.age(partial));if(age<0||age>90)continue;
+            double distance=mc().player.position().distanceTo(f.packet.target());amount+=ImpactDynamics.shake(age,ImpactDynamics.power(f.spell.tier(),f.spell.radius,f.packet.scale())*f.strikePower,distance);
         }return Math.min(amount,3.8);
     }
     /** 0.7.0: brief hard directional kick on impact (bounded like shake, never server-visible). */
     public static double shove(float partial){
         if(!ClientOptions.SHAKE.get()||mc().player==null)return 0;
-        double amount=0;for(Fx f:ACTIVE){double age=ImpactDynamics.sinceHit(f.age(partial)-f.spell.impact,f.spell.tier());if(age<0||age>=6)continue;
+        double amount=0;for(Fx f:ACTIVE){double age=sinceStrike(f,f.age(partial));if(age<0||age>=6)continue;
             double distance=mc().player.position().distanceTo(f.packet.target());
-            amount+=ImpactDynamics.kick(age,ImpactDynamics.power(f.spell.tier(),f.spell.radius,f.packet.scale()))*Math.min(1,160/Math.max(1,distance));
+            amount+=ImpactDynamics.kick(age,ImpactDynamics.power(f.spell.tier(),f.spell.radius,f.packet.scale())*f.strikePower)*Math.min(1,160/Math.max(1,distance));
         }return Math.min(amount,3.2);
     }
     private static Vec3 nearestImpact(){
@@ -147,9 +161,9 @@ public final class ClientEffects {
         var f=cinematic();if(f!=null&&!SpellFilm.running()){e.setFOV(e.getFOV()*(InvocationDirector.supports(f.spell)?InvocationDirector.fov(f,(float)e.getPartialTick()):((f.spell.cosmic()?.89:1.08)+.035*Math.sin(f.age*.012))));return;}
         // 0.7.3: every strike of the barrage punches the FOV open for a few ticks.
         if(mc().player==null)return;float partial=(float)e.getPartialTick();double punch=0;
-        for(Fx fx:ACTIVE){double after=ImpactDynamics.sinceHit(fx.age(partial)-fx.spell.impact,fx.spell.tier());if(after<0||after>=10)continue;
+        for(Fx fx:ACTIVE){double after=sinceStrike(fx,fx.age(partial));if(after<0||after>=10)continue;
             double d=mc().player.position().distanceTo(fx.packet.target());
-            punch+=ImpactDynamics.kick(after,ImpactDynamics.power(fx.spell.tier(),fx.spell.radius,fx.packet.scale()))*Math.min(1,160/Math.max(1,d));}
+            punch+=ImpactDynamics.kick(after,ImpactDynamics.power(fx.spell.tier(),fx.spell.radius,fx.packet.scale())*fx.strikePower)*Math.min(1,160/Math.max(1,d));}
         if(punch>.01)e.setFOV(e.getFOV()*(1+Math.min(punch,.9)*.20));
     }
     @SubscribeEvent public static void fog(ViewportEvent.ComputeFogColor e){

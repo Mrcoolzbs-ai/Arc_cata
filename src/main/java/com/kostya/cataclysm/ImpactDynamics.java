@@ -15,8 +15,9 @@ public final class ImpactDynamics {
     }
     public static double sinceHit(double after,int tier){
         if(after<0)return after;
-        int n=hits(tier),k=(int)Math.min(after/7.,n);
-        return after-k*7.;
+        // 0.7.4: synthetic pacing is only the preview/visual-only fallback; real casts strike from server flush events.
+        int n=hits(tier),k=(int)Math.min(after/12.,n);
+        return after-k*12.;
     }
     public static double shake(double after,double power,double distance){
         if(after<0||after>=100)return 0;

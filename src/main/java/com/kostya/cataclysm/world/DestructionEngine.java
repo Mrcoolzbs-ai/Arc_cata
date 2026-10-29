@@ -37,7 +37,7 @@ public final class DestructionEngine {
         private final Map<Long,Integer> retries=new HashMap<>();private final Deque<ChunkPos> todo;private final Deque<Prepared> ready=new ArrayDeque<>();
         private final List<Loading> loading=new ArrayList<>();private Prepared current;private int cursor,pendingLights;
         private Capture capture;
-        private long lastNotice=-1000;
+        private long lastNotice=-1000;private long lastStrike=-1000;private int strikeIndex;
         private Handle(ServerLevel level,DestructionPlan plan,UUID owner){
             this.level=level;this.plan=plan;this.id=plan.seed;this.owner=owner;
             var list=new ArrayList<ChunkPos>();
@@ -242,8 +242,18 @@ public final class DestructionEngine {
             if(p.future.isCompletedExceptionally())LogUtils.getLogger().error("[Cataclysm] Lighting failed for {}",chunk.getPos());
             var players=h.level.getChunkSource().chunkMap.getPlayers(chunk.getPos(),false);
             if(!players.isEmpty()){var packet=new ClientboundLevelChunkWithLightPacket(chunk,h.level.getChunkSource().getLightEngine(),null,null);for(var player:players)player.connection.send(packet);}
+            // 0.7.4: terrain just became visibly destroyed for these players - fire the matching barrage strike.
+            if(!players.isEmpty())strike(h,players);
             h.pendingLights--;unpin(h,chunk.getPos());it.remove();sent++;
         }
+    }
+    /** 0.7.4: reality-synced barrage - one broadcast per flush wave, throttled; driven by actual terrain sync, not a timer. */
+    private static void strike(Handle h,List<ServerPlayer> players){
+        if(h.plan.spell==Spell.END_OF_ALL)return; // End of All stays pure cinema: no strike packets.
+        long now=h.level.getGameTime();if(now-h.lastStrike<7)return;h.lastStrike=now;
+        float intensity=.55f+.45f*Math.min(1f,h.committed/(float)Math.max(1,h.total));h.strikeIndex++;
+        var packet=new SpellNetwork.Strike(h.plan.spell.ordinal(),h.plan.center,h.strikeIndex,intensity);
+        for(var player:players)if(player.position().distanceToSqr(h.plan.center)<1024*1024)PacketDistributor.sendToPlayer(player,packet);
     }
     private static void retry(Handle h,ChunkPos pos,String why){
         int attempt=h.retries.merge(pos.toLong(),1,Integer::sum);
