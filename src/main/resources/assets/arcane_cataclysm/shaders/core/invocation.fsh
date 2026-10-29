@@ -439,12 +439,12 @@ void main(){
  // Short, signature-colored impact fractures; no effect before impact or in reduced-flash mode.
  float fracture=FxImpact.z,force=clamp(FxImpact.y/2.1,.35,1.8);
  float clock=floor(max(0.,FxImpact.x)*1.6),row=floor(sampleUV.y*43.);
- float torn=step(.86,hash1(row*17.+clock*31.));
- float jitter=(hash1(row+clock*71.)-.5)*torn*.08*fracture*force;
+ float torn=step(.94,hash1(row*17.+clock*31.)); // 0.8.1: visibility first - far fewer torn rows
+ float jitter=(hash1(row+clock*71.)-.5)*torn*.03*fracture*force;
  vec2 warped=clamp(sampleUV+vec2(jitter,0),vec2(.002),vec2(.998));
- float split=(.006+.026*torn)*fracture*force;
- // 0.7.7: the split is a brief accent - it dies inside half a second after each strike.
- float radialCA=(.024*FxImpact.w+.09*exp(-max(0.,FxImpact.x)*.55)*step(0.,FxImpact.x))*force;
+ float split=(.003+.010*torn)*fracture*force;
+ // 0.8.1: the split is halved again - a whisper at the strike, never a veil.
+ float radialCA=(.012*FxImpact.w+.045*exp(-max(0.,FxImpact.x)*.55)*step(0.,FxImpact.x))*force;
  radialCA+=.004*ease(.88,1.,min(1.,FxParams.y))*step(FxParams.y,1.);
  vec2 radialDir=(sampleUV-.5)*radialCA;
  vec3 world;
@@ -452,16 +452,16 @@ void main(){
  world.g=texture(Sampler0,warped).g;
  world.b=texture(Sampler0,clamp(warped-vec2(split,0)-radialDir,vec2(.002),vec2(.998))).b;
  // 0.7.2: painted signature fringes - saturated per-spell bands like the reference frames.
- world+=primary*smoothstep(.45,1.,abs(sampleUV.x-.5)*2.)*radialCA*2.2+accent*smoothstep(.45,1.,abs(sampleUV.y-.5)*2.)*radialCA*2.2;
+ world+=primary*smoothstep(.45,1.,abs(sampleUV.x-.5)*2.)*radialCA*.7+accent*smoothstep(.45,1.,abs(sampleUV.y-.5)*2.)*radialCA*.7;
  float fineRow=floor(sampleUV.y*FxScreen.y/3.);
  float shards=step(.989,hash1(floor(sampleUV.x*90.)+fineRow*113.+clock*271.));
  vec3 prism=mix(primary,accent,step(.5,hash1(row+clock)));
  prism=mix(prism,FxColor2.rgb,.40);
- world+=prism*(torn*.30+shards*.60)*fracture*force;
- float scan=cos(sampleUV.y*FxScreen.y*1.57+clock)*.035*fracture;
+ world+=prism*(torn*.10+shards*.18)*fracture*force;
+ float scan=cos(sampleUV.y*FxScreen.y*1.57+clock)*.015*fracture;
  world*=1.+scan;
  // A single exposure dip replaces persistent rapid full-screen strobing.
- world*=1.-.17*fracture*step(2.,FxImpact.x);
+ world*=1.-.07*fracture*step(2.,FxImpact.x);
  // World insert grading: keep the real terrain visible, only cool the shadows.
  float p=FxParams.y,pre=1.-ease(.98,1.06,p);
  world*=mix(vec3(1),vec3(.79,.85,1.),pre*.55);
@@ -481,7 +481,7 @@ void main(){
   scene+=streakCol*streak*smoothstep(.28,.6,rr)*(1.-smoothstep(1.1,1.6,rr))*speed*.45;
  }
  // 0.7.1: reference look - the frame desaturates while the RGB split is at its peak.
- scene=mix(scene,vec3(dot(scene,vec3(.299,.587,.114))),clamp(radialCA*3.,0.,.20));
+ scene=mix(scene,vec3(dot(scene,vec3(.299,.587,.114))),clamp(radialCA*2.,0.,.10));
  // 0.7.5: TSS-style impact frames - one stylized frame per tick for six ticks after each strike (ink/inverted/accent).
  float ifStep=FxImpact.x>=0.?floor(min(FxImpact.x,7.)):-1.; // 0.7.6: negative clock = no strike yet, no impact frame
  int ifMode=ifStep==0.?3:ifStep==1.?1:ifStep==2.?3:ifStep==3.?1:ifStep==4.?0:(ifStep==5.?3:-1);
