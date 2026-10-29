@@ -482,6 +482,23 @@ void main(){
  }
  // 0.7.1: reference look - the frame desaturates while the RGB split is at its peak.
  scene=mix(scene,vec3(dot(scene,vec3(.299,.587,.114))),clamp(radialCA*5.,0.,.4));
+ // 0.7.5: TSS-style impact frames - one stylized frame per tick for six ticks after each strike (ink/inverted/accent).
+ float ifStep=floor(clamp(FxImpact.x,0.,7.));
+ int ifMode=ifStep==0.?3:ifStep==1.?1:ifStep==2.?3:ifStep==3.?1:ifStep==4.?0:(ifStep==5.?3:-1);
+ if(ifMode>=0&&FxParams.w>0.){
+  float ifLum=dot(scene,vec3(.299,.587,.114));vec3 ifFrame;
+  if(ifMode==1)ifFrame=vec3(1.)-scene;
+  else{float ink=smoothstep(.18,.72,ifLum);
+   ifFrame=mix(vec3(.015,.01,.02),primary,ink);
+   if(ifMode==3)ifFrame=mix(ifFrame,accent,step(.5,ifLum)*.55);}
+  scene=mix(scene,ifFrame,.92);}
+ // 0.7.5: the hit-stop beat and the TSS zoom blur, straight from the reference anatomy.
+ scene=mix(scene,vec3(dot(scene,vec3(.299,.587,.114))),.30*step(0.,FxImpact.x)*(1.-smoothstep(6.,16.,FxImpact.x)));
+ float zoomK=.5*smoothstep(0.,.6,FxImpact.x)*(1.-smoothstep(6.,24.,FxImpact.x));
+ if(zoomK>.02){vec3 zoom=scene;
+  for(int k=1;k<=5;k++){float zs=1.-float(k)*.012*zoomK;
+   zoom+=texture(Sampler0,clamp((uv-.5)*zs+.5,vec2(.002),vec2(.998))).rgb;}
+  scene=zoom/6.;}
  float vignette=1.-.18*ease(.26,1.1,length(uv));scene*=vignette;
  scene*=1.-.10*clamp(FxImpact.w,0.,1.)*step(0.,FxImpact.x);
  fragColor=vec4(scene,1.)*ColorModulator;

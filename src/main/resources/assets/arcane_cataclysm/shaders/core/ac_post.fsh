@@ -147,6 +147,24 @@ void main(){
     world=world/(vec3(1.)+world*.22);
     world=mix(world,world+FxColor2.rgb*.18,FxParams.w);
     if(FxParams.z>.001){vec3 vision=astral(p,int(FxParams.x+.5),FxParams.y);vision=vec3(1.)-exp(-vision*1.2);world=mix(world,vision,FxParams.z);}
+    // 0.7.5: TSS-style impact frames - one stylized frame per tick for six ticks after each strike (ink/inverted/accent).
+    float ifStep=floor(clamp(FxImpact.x,0.,7.));
+    int ifMode=ifStep==0.?3:ifStep==1.?1:ifStep==2.?3:ifStep==3.?1:ifStep==4.?0:(ifStep==5.?3:-1);
+    if(ifMode>=0&&FxColor3.a>0.){
+        float ifLum=dot(world,vec3(.299,.587,.114));vec3 ifFrame;
+        if(ifMode==1)ifFrame=vec3(1.)-world;
+        else{float ink=smoothstep(.18,.72,ifLum);
+            ifFrame=mix(vec3(.015,.01,.02),FxColor2.rgb,ink);
+            if(ifMode==3)ifFrame=mix(ifFrame,FxColor3.rgb,step(.5,ifLum)*.55);}
+        world=mix(world,ifFrame,.92*clamp(FxColor3.a,0.,1.));}
+    // 0.7.5: the hit-stop beat - the frame drains of colour for a moment after each strike.
+    world=mix(world,vec3(dot(world,vec3(.299,.587,.114))),.30*FxColor3.a*step(0.,FxImpact.x)*(1.-smoothstep(6.,16.,FxImpact.x)));
+    // 0.7.5: TSS zoom blur - the frame punches outward for a beat at each strike.
+    float zoomK=.5*FxColor3.a*smoothstep(0.,.6,FxImpact.x)*(1.-smoothstep(6.,24.,FxImpact.x));
+    if(zoomK>.02){vec3 zoom=world;
+        for(int k=1;k<=5;k++){float zs=1.-float(k)*.012*zoomK;
+            zoom+=texture(Sampler0,clamp((sampleUV-.5)*zs+.5,vec2(.001),vec2(.999))).rgb;}
+        world=zoom/6.;}
     world*=1.-.3*smoothstep(.25,.9,length(p));
     fragColor=vec4(world,1.)*ColorModulator;
 }
