@@ -131,7 +131,7 @@ public final class ClientEffects {
         if(!ClientOptions.SHAKE.get()||mc().player==null)return 0;
         double amount=0;for(Fx f:ACTIVE){double age=sinceStrike(f,f.age(partial));if(age<0||age>90)continue;
             double distance=mc().player.position().distanceTo(f.packet.target());amount+=ImpactDynamics.shake(age,ImpactDynamics.power(f.spell.tier(),f.spell.radius,f.packet.scale())*f.strikePower,distance);
-        }return Math.min(amount,3.8);
+        }return Math.min(amount,1.3);
     }
     /** 0.7.0: brief hard directional kick on impact (bounded like shake, never server-visible). */
     public static double shove(float partial){
@@ -177,8 +177,8 @@ public final class ClientEffects {
         // 0.7.0 punch pass: a short directional shove from the impact, then a high-frequency tremor.
         if(shove>.001){Vec3 away=base.subtract(nearestImpact());
             if(away.lengthSqr()>.01)base=base.add(away.normalize().scale(shove*.14));}
-        base=base.add(Math.sin(t*5.1)*shake*.11,Math.cos(t*6.3)*shake*.085,Math.sin(t*4.4)*shake*.10);
-        return new View(base,yaw+(float)(Math.sin(t*4.7)*shake*.5),pitch+(float)(Math.cos(t*5.9)*shake*.42),roll+(float)(Math.sin(t*3.8)*shake*.7));
+        base=base.add(Math.sin(t*5.1)*shake*.05,Math.cos(t*6.3)*shake*.04,Math.sin(t*4.4)*shake*.045);
+        return new View(base,yaw+(float)(Math.sin(t*4.7)*shake*.28),pitch+(float)(Math.cos(t*5.9)*shake*.24),roll+(float)(Math.sin(t*3.8)*shake*.4));
     }
     public static double smooth(double p){p=Math.max(0,Math.min(1,p));return p*p*(3-2*p);}
     @SubscribeEvent public static void fov(ViewportEvent.ComputeFov e){
