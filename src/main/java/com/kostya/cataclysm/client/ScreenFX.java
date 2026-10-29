@@ -37,12 +37,14 @@ public final class ScreenFX {
         RenderSystem.setShaderColor(1,1,1,1);RenderSystem.setShader(()->active);RenderSystem.setShaderTexture(0,copy.getColorTextureId());
         active.safeGetUniform("FxParams").set((float)(directed?f.spell.ordinal():f.spell.visualId()),phase,directed?InvocationDirector.theatre(f,age):realm,directed?(ClientOptions.FLASH.get()?1f:0f):shock);
         active.safeGetUniform("FxColor2").set(((f.spell.color>>16)&255)/255f,((f.spell.color>>8)&255)/255f,(f.spell.color&255)/255f,ClientOptions.BLOOM.get().floatValue());
-        // 0.7.2: secondary spell color feeds the opposite fringe band; glitch escalates with spell tier (16 stays pure cinema).
+        // 0.7.2: secondary spell color feeds the opposite fringe band.
         active.safeGetUniform("FxColor3").set(((f.spell.secondary>>16)&255)/255f,((f.spell.secondary>>8)&255)/255f,(f.spell.secondary&255)/255f,1f);
         double power=ImpactDynamics.power(f.spell.tier(),f.spell.radius,f.packet.scale());
-        active.safeGetUniform("FxImpact").set(age-f.spell.impact,(float)power,
-            (float)(ClientOptions.GLITCH.get()&&ClientOptions.FLASH.get()?ImpactDynamics.glitch(age-f.spell.impact,f.spell.tier()):0),
-            ClientOptions.SHAKE.get()?(float)ImpactDynamics.shake(age-f.spell.impact,power,0):0f);
+        // 0.7.3: a tier-scaled barrage of strikes hammers the envelopes; the shader clock follows the latest hit.
+        float sinceHit=(float)ImpactDynamics.sinceHit(age-f.spell.impact,f.spell.tier());
+        active.safeGetUniform("FxImpact").set(sinceHit,(float)power,
+            (float)(ClientOptions.GLITCH.get()&&ClientOptions.FLASH.get()?ImpactDynamics.glitch(sinceHit,f.spell.tier()):0),
+            ClientOptions.SHAKE.get()?(float)ImpactDynamics.shake(sinceHit,power,0):0f);
         active.safeGetUniform("FxTime").set(age/20f);
         active.safeGetUniform("FxScreen").set((float)main.width,(float)main.height);
         var b=Tesselator.getInstance().begin(VertexFormat.Mode.QUADS,DefaultVertexFormat.POSITION_TEX_COLOR);

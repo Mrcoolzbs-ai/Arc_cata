@@ -4,9 +4,19 @@ package com.kostya.cataclysm;
 public final class ImpactDynamics {
     public static double power(int tier,double radius,double scale){
         if(!Double.isFinite(scale))scale=1;
-        double p=(.60+.26*Math.min(tier,15)+.003*Math.max(0,radius))*Math.sqrt(Math.clamp(scale,.25,4));
+        double p=(.60+.30*Math.min(tier,15)+.003*Math.max(0,radius))*Math.sqrt(Math.clamp(scale,.25,4));
         // 0.7.2: tier escalation for spells 1-15; 16 is pure cinema and gets a gentle factor instead.
-        return Math.clamp(tier>=16?p*.45:p,.35,4.2);
+        return Math.clamp(tier>=16?p*.45:p,.35,4.6);
+    }
+    public static int hits(int tier){
+        if(tier>=16)return 0; // End of All stays pure cinema: one authored moment, no barrage.
+        // 0.7.3: anime barrage - the aftermath is a train of strikes, not a single hit.
+        return 2+(tier-1)/2;
+    }
+    public static double sinceHit(double after,int tier){
+        if(after<0)return after;
+        int n=hits(tier),k=(int)Math.min(after/7.,n);
+        return after-k*7.;
     }
     public static double shake(double after,double power,double distance){
         if(after<0||after>=100)return 0;
@@ -26,8 +36,8 @@ public final class ImpactDynamics {
     }
     public static double glitch(double after,int tier){
         if(after<0||after>=32)return 0;
-        // 0.7.2: spells escalate 1->15 (55%..100% intensity); spell 16 is pure cinema and gets no chromatic tear.
-        double escalate=tier>=16?0:.55+.45*(tier-1)/14.;
+        // 0.7.3: every tier now reads as full anime; the ramp 75%..100% only shapes the sustained tear length.
+        double escalate=tier>=16?0:.75+.25*(tier-1)/14.;
         return escalate*Math.min(1,Math.exp(-after/7.5)+.42*Math.exp(-Math.pow((after-8)/3.,2)))*Math.pow(1-after/32,2);
     }
     private ImpactDynamics(){}

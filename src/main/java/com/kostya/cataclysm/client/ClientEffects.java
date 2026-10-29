@@ -91,14 +91,14 @@ public final class ClientEffects {
     }
     public static double shake(float partial){
         if(!ClientOptions.SHAKE.get()||mc().player==null)return 0;
-        double amount=0;for(Fx f:ACTIVE){double age=f.age(partial)-f.spell.impact;if(age<0||age>90)continue;
+        double amount=0;for(Fx f:ACTIVE){double age=ImpactDynamics.sinceHit(f.age(partial)-f.spell.impact,f.spell.tier());if(age<0||age>90)continue;
             double distance=mc().player.position().distanceTo(f.packet.target());amount+=ImpactDynamics.shake(age,ImpactDynamics.power(f.spell.tier(),f.spell.radius,f.packet.scale()),distance);
         }return Math.min(amount,3.8);
     }
     /** 0.7.0: brief hard directional kick on impact (bounded like shake, never server-visible). */
     public static double shove(float partial){
         if(!ClientOptions.SHAKE.get()||mc().player==null)return 0;
-        double amount=0;for(Fx f:ACTIVE){double age=f.age(partial)-f.spell.impact;if(age<0||age>=6)continue;
+        double amount=0;for(Fx f:ACTIVE){double age=ImpactDynamics.sinceHit(f.age(partial)-f.spell.impact,f.spell.tier());if(age<0||age>=6)continue;
             double distance=mc().player.position().distanceTo(f.packet.target());
             amount+=ImpactDynamics.kick(age,ImpactDynamics.power(f.spell.tier(),f.spell.radius,f.packet.scale()))*Math.min(1,160/Math.max(1,distance));
         }return Math.min(amount,3.2);
@@ -145,12 +145,12 @@ public final class ClientEffects {
     public static double smooth(double p){p=Math.max(0,Math.min(1,p));return p*p*(3-2*p);}
     @SubscribeEvent public static void fov(ViewportEvent.ComputeFov e){
         var f=cinematic();if(f!=null&&!SpellFilm.running()){e.setFOV(e.getFOV()*(InvocationDirector.supports(f.spell)?InvocationDirector.fov(f,(float)e.getPartialTick()):((f.spell.cosmic()?.89:1.08)+.035*Math.sin(f.age*.012))));return;}
-        // 0.7.0: any nearby impact punches the FOV open for a few ticks.
+        // 0.7.3: every strike of the barrage punches the FOV open for a few ticks.
         if(mc().player==null)return;float partial=(float)e.getPartialTick();double punch=0;
-        for(Fx fx:ACTIVE){double after=fx.age(partial)-fx.spell.impact;if(after<0||after>=10)continue;
+        for(Fx fx:ACTIVE){double after=ImpactDynamics.sinceHit(fx.age(partial)-fx.spell.impact,fx.spell.tier());if(after<0||after>=10)continue;
             double d=mc().player.position().distanceTo(fx.packet.target());
             punch+=ImpactDynamics.kick(after,ImpactDynamics.power(fx.spell.tier(),fx.spell.radius,fx.packet.scale()))*Math.min(1,160/Math.max(1,d));}
-        if(punch>.01)e.setFOV(e.getFOV()*(1+Math.min(punch,.9)*.16));
+        if(punch>.01)e.setFOV(e.getFOV()*(1+Math.min(punch,.9)*.20));
     }
     @SubscribeEvent public static void fog(ViewportEvent.ComputeFogColor e){
         if(ACTIVE.isEmpty())return;Fx f=ACTIVE.getLast();float mix=.10f*(float)Math.sin(Math.min(1,f.age/(double)f.spell.duration)*Math.PI);

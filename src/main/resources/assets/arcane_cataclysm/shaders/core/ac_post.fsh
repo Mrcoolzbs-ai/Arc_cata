@@ -6,8 +6,8 @@ uniform vec4 FxParams; // spell, time/impact, astral mix, impact flash
 uniform vec4 FxColor2; // signature color, bloom amount
 uniform float FxTime;
 uniform vec2 FxScreen;
-uniform vec4 FxImpact; // 0.7.0: ticks after impact, bounded power, glitch envelope, shake envelope
-uniform vec4 FxColor3; // 0.7.2: secondary spell color for the opposite fringe band
+uniform vec4 FxImpact; // ticks since the latest barrage strike, bounded power, glitch envelope, shake envelope
+uniform vec4 FxColor3; // secondary spell color for the opposite fringe band
 in vec2 texCoord;
 in vec4 vertexColor;
 out vec4 fragColor;
@@ -113,12 +113,12 @@ vec3 astral(vec2 p,int spell,float phase){
 vec3 bright(vec2 uv){vec3 c=texture(Sampler0,uv).rgb;return c*smoothstep(.65,1.2,max(c.r,max(c.g,c.b)));}
 void main(){
     vec2 uv=vec2(texCoord.x,1.-texCoord.y),p=(texCoord-.5)*vec2(FxScreen.x/FxScreen.y,1.);
-    float after=FxParams.y-1.;vec2 q=uv-.5;float hit=step(0.,after);
-    // 0.7.0: two hard shockfronts - a fast strike plus one echo - instead of one barely visible ripple.
-    float shock=sin(length(q)*44.-after*38.)*exp(-max(0.,after)*3.2)*.016*hit;
-    shock+=sin(length(q)*30.-(after-6.)*26.)*exp(-abs(after-6.)*.8)*.010*step(6.,after);
-    // 0.7.1: reference-tuned vs The Shooting Star frames - an extreme full-frame RGB split on the strike, gone in ~1s.
-    float caEnv=max(FxImpact.w*.030,FxImpact.z*.095)+.0035*smoothstep(.82,1.,min(1.,FxParams.y))*(1.-hit);
+    float after=FxParams.y-1.;vec2 q=uv-.5;float hit=step(0.,after);float afterHit=FxImpact.x;
+    // 0.7.3: every strike of the barrage re-fires the shockfront - two hard fronts per hit.
+    float shock=sin(length(q)*44.-afterHit*38.)*exp(-max(0.,afterHit)*3.2)*.016*hit;
+    shock+=sin(length(q)*30.-(afterHit-6.)*26.)*exp(-abs(afterHit-6.)*.8)*.010*step(6.,afterHit);
+    // 0.7.3: full anime madness - the split stays alive through the whole barrage, not just one strike.
+    float caEnv=max(FxImpact.w*.030,FxImpact.z*.16)+.0035*smoothstep(.82,1.,min(1.,FxParams.y))*(1.-hit);
     vec2 caDir=q*vec2(FxScreen.x/FxScreen.y,1.);
     vec2 sampleUV=clamp(uv+normalize(q+vec2(.0001))*shock,vec2(.001),vec2(.999));
     vec3 world;
@@ -126,7 +126,7 @@ void main(){
     world.g=texture(Sampler0,sampleUV).g;
     world.b=texture(Sampler0,clamp(sampleUV-caDir*caEnv,vec2(.001),vec2(.999))).b;
     // 0.7.2: painted signature fringes - saturated per-spell bands like the reference frames, not content-derived tints.
-    world+=FxColor2.rgb*smoothstep(.08,.75,abs(q.x))*caEnv*4.5+FxColor3.rgb*smoothstep(.08,.75,abs(q.y))*caEnv*4.5;
+    world+=FxColor2.rgb*smoothstep(.08,.75,abs(q.x))*caEnv*8.+FxColor3.rgb*smoothstep(.08,.75,abs(q.y))*caEnv*8.;
     vec2 pixel=1./FxScreen;vec3 bloom=vec3(0.);
     for(int i=0;i<8;i++){
         float a=float(i)*PI/4.;vec2 off=vec2(cos(a),sin(a))*pixel;
@@ -135,8 +135,8 @@ void main(){
     float grade=1.-.24*smoothstep(.1,.8,min(1.,FxParams.y));
     if(FxParams.y>1.)grade=1.;world*=grade;
     world+=bloom*FxColor2.a;
-    // 0.7.0: impact flash with a fast exposure punch and a short radial speed pull toward the centre.
-    float flash=exp(-max(0.,after)*.42)*hit*FxParams.w;
+    // 0.7.3: the flash re-fires on every strike of the barrage, not just the first.
+    float flash=exp(-max(0.,afterHit)*.42)*hit*FxParams.w;
     world=mix(world,vec3(1.,.96,.9)+FxColor2.rgb*.4,clamp(flash,0.,.85));
     if(flash>.02){vec3 pull=vec3(0.);
         for(int k=1;k<=4;k++){float fstep=float(k)*.25;

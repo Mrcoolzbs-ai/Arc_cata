@@ -443,8 +443,8 @@ void main(){
  float jitter=(hash1(row+clock*71.)-.5)*torn*.12*fracture*force;
  vec2 warped=clamp(sampleUV+vec2(jitter,0),vec2(.002),vec2(.998));
  float split=(.006+.026*torn)*fracture*force;
- // 0.7.1: reference-tuned (The Shooting Star): up to ~10% frame-width RGB split on the strike frame.
- float radialCA=(.030*FxImpact.w+.105*exp(-max(0.,FxImpact.x)*.30)*step(0.,FxImpact.x))*force;
+ // 0.7.3: full anime madness - the split rides the whole barrage at ~10% frame width.
+ float radialCA=(.030*FxImpact.w+.16*exp(-max(0.,FxImpact.x)*.30)*step(0.,FxImpact.x))*force;
  radialCA+=.004*ease(.88,1.,min(1.,FxParams.y))*step(FxParams.y,1.);
  vec2 radialDir=(sampleUV-.5)*radialCA;
  vec3 world;
@@ -452,12 +452,12 @@ void main(){
  world.g=texture(Sampler0,warped).g;
  world.b=texture(Sampler0,clamp(warped-vec2(split,0)-radialDir,vec2(.002),vec2(.998))).b;
  // 0.7.2: painted signature fringes - saturated per-spell bands like the reference frames.
- world+=primary*smoothstep(.1,1.,abs(sampleUV.x-.5)*2.)*radialCA*3.5+accent*smoothstep(.1,1.,abs(sampleUV.y-.5)*2.)*radialCA*3.5;
+ world+=primary*smoothstep(.1,1.,abs(sampleUV.x-.5)*2.)*radialCA*6.+accent*smoothstep(.1,1.,abs(sampleUV.y-.5)*2.)*radialCA*6.;
  float fineRow=floor(sampleUV.y*FxScreen.y/3.);
  float shards=step(.989,hash1(floor(sampleUV.x*90.)+fineRow*113.+clock*271.));
  vec3 prism=mix(primary,accent,step(.5,hash1(row+clock)));
  prism=mix(prism,FxColor2.rgb,.40);
- world+=prism*(torn*.30+shards*.85)*fracture*force;
+ world+=prism*(torn*.40+shards*1.1)*fracture*force;
  float scan=cos(sampleUV.y*FxScreen.y*1.57+clock)*.035*fracture;
  world*=1.+scan;
  // A single exposure dip replaces persistent rapid full-screen strobing.
@@ -466,8 +466,8 @@ void main(){
  float p=FxParams.y,pre=1.-ease(.98,1.06,p);
  world*=mix(vec3(1),vec3(.79,.85,1.),pre*.55);
  world+=FxColor2.rgb*.022*pre;
- // 0.7.0: hotter, faster flash with a directional exposure spike.
- float impact=exp(-max(0.,p-1.)*26.)*step(1.,p)*FxParams.w;
+ // 0.7.3: the flash re-fires on every strike of the barrage.
+ float impact=exp(-max(0.,FxImpact.x)*26.)*step(0.,FxImpact.x)*FxParams.w;
  world=mix(world,vec3(1.,.94,.82),clamp(impact,0.,1.)*.45);
  world*=1.+impact*.30*(1.-ease(0.,.9,length(uv)));
  vec3 scene=world;
